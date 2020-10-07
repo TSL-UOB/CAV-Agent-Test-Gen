@@ -280,7 +280,7 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
 
 \begin{definition}\label{definition:game}
     Let $(N, B, E, f_{B,N}, f_{E,B})$ be an agent-body-effector model.
-    A simulator-based testing game is a stochastic shortest path game $(N, S, A, T, \vect{C}, G)$ if:
+    A stochastic shortest path game $(N, S, A, T, \vect{C}, G)$ is a simulator-based testing game if:
     \begin{itemize}
         \item $N = \{ 1, \dots, n \}$ such that $n \ge 2$ with $1$ the ego agent and $2, \dots, n$ the tester agents
         \item $A_{i} = A(E(B(\{ i \})))$ is the set of actions available to agent $i \in N$
@@ -550,7 +550,7 @@ The body kinematics from Equations 1--7 are illustrated in Figure~\ref{figure:ki
 \section*{Appendix: Algorithms}
 
 \begin{note}[To do]
-    Account for discretisation of continuous action spaces at the agent level, although strictly speaking only approximate Q-learning agents require finite action spaces.
+    Account for discretisation of continuous action spaces within each agent type (although, strictly speaking, \textsc{QLearningAgent} is the only agent type that requires a finite action space).
 \end{note}
 
 \begin{algorithm}[htbp]
