@@ -206,6 +206,8 @@ $A = A_{1} \times \dots \times A_{n}$ is a set of action profiles with $A_{i}$ t
 $T : S \times A \to \Delta(S)$ is a (stochastic) transition function,
 $\vect{C} = (C_{1}, \dots, C_{n})$ is a profile of cost functions with $C_{i} : S \times A \times S \to \mathbb{R}^{\ge 0}$ the (non-negative) cost function for player $i \in N$,
 and $G = G_{1} \cup \dots \cup G_{n}$ is a non-empty set of goal states with $G_{i} \subseteq S$ the (possibly empty, possibly infinite) set of goal states for player $i \in N$.
+Moreover, each cost function $C_{i}$ should satisfy $C_{i}(s, a, s') = 0$ if $s \in G$, or $C_{i}(s, a, s') > 0$ otherwise, for all $s, s' \in S$ and each $a \in A$.
+Similarly, the transition function $T$ should satisfy $T(s, a, s) = 1$ for all $s \in G$ and each $a \in A$.
 SSP games subsume numerous other frameworks, including finite- and infinite-horizon Markov games as well as SSP MDPs (which in turn subsume finite- and infinite-horizon MDPs as well as classical planning)~\cite{Bertsekas:book:1995,Patek:PhD:1997,Patek:JCO:1999,Kolobov:book:2012}.
 
 \begin{note}
