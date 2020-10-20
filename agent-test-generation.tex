@@ -36,10 +36,10 @@
 \newcommand{\vect}[1]{\bm{#1}}
 
 \usepackage{forest}
-\usepackage{tikz}
 \usepackage{subcaption}
 
 \DeclareMathOperator*{\argmax}{\arg\!\max}
+\DeclareMathOperator*{\argmin}{\arg\!\min}
 \DeclareMathOperator*{\atantwo}{atan2}
 
 \usepackage{mdframed}
@@ -68,6 +68,8 @@
 \DeclareSymbolFont{mathx}{U}{mathx}{m}{n}
 \DeclareMathSymbol{\bigtimes}{1}{mathx}{"91}
 
+\usepackage{pdflscape}
+
 \title{Simulator-Based Verification of Autonomous Vehicles: Agent-Based Test Generation}
 \author{}
 \date{\DTMcurrenttime, \today}
@@ -84,23 +86,11 @@
     \item \textbf{Actions} may be multi-body and/or multi-effector
     \item \textbf{Action space} is continuous and discretisation typically requires durative actions
     \item \textbf{Observability} is full, meaning that a sensor model is not required (although partial observability can be simulated)
+    \item \textbf{Initial state} may be given (meaning a partial policy is sufficient) or may not be given (meaning a complete policy is necessary)
     \item \textbf{Objectives} are goals states with transition costs/rewards, meaning in general that the horizon is indefinite, but a finite-horizon may also be imposed
     \item \textbf{Model} for transitions and objectives is unknown, but can be sampled through interaction with a simulator
     \item \textbf{Game} involving two or more players (agents), including a potentially adversarial design under verficiation (i.e.\ the ego agent)
-    \item \textbf{Test generation} may be online (providing incomplete tests) or offline (providing complete tests)
 \end{itemize}
-
-\begin{note}
-    Ideally a test should specify the optimal effector-actions to execute in a given state with respect to some test objective.
-    A complete test then would be one that specifies effector-actions to execute in every reachable state.
-    Online testing cannot guarantee complete tests because effector-actions are only determined for states that are actually encountered in a given run, and this does not typically cover all reachable states.
-    For example, if a simulation involves non-deterministic action-selection, non-deterministic action-effects, or exogenous events, then these sources of uncertainty mean that a single execution of online testing will only reveal one of many possible runs.
-    It may be possible to impose restrictions on a simulation so as to avoid many of these sources of uncertainty, but the actions of the ego agent remain uncontrollable.
-    For example, a test may be complete for a given ego policy, but may be incomplete when faced with a different ego policy (since that policy may cause the system to transition into a state that was not accounted for in the original test).
-    It follows that a test is only complete if it accounts for every source of uncertainty and also works for every possible ego policy.
-    This is a very strong requirement and is unlikely to be satisfiable in practice (e.g.\ if agents execute actions simultaneously, then the ego policy is a priori unknown).
-    This seems to imply that the aim of our work is not \emph{test generation} but rather \emph{online testing with optional capturing of incomplete tests}: re-running such tests could be useful for repeatability, but test execution may fail, and there would be no guarantees that tests remain optimal with respect to their original test objectives.
-\end{note}
 
 \newpage
 \section{Preliminaries}
@@ -115,106 +105,276 @@ and $\mathbb{N}$ is the set of natural numbers.
 A function $f : X \to Y$ is a surjection if for each $y \in Y$ there exists some $x \in X$ such that $f(x) = y$.
 Given a function $f : X \to Y$, the inverse image of function $f$ is a function $f_{B,N}^{-1} : Y \to 2^{X}$ defined for each $y \in Y$ as $f_{B,N}^{-1}(y) = \{ x \in X \mid f(x) = y \}$.
 
-\subsection{Normal-Form Games}
-An ($n$-player) normal-form game is a tuple $(N, A, \vect{u})$ where $N = \{ 1, \dots, n \}$ is a finite set of players, $A = A_{1} \times \dots \times A_{n}$ is a set of action profiles with $A_{i}$ the (possibly infinite) set of actions available to player $i \in N$, and $\vect{u} = (u_{1}, \dots, u_{n})$ is a profile of utility functions with $u_{i} : A \to \mathbb{R}$ the utility function for~$i$.
-A (mixed) strategy for player $i \in N$ is a probability distribution $\psi \in \Delta(A_{i})$ with $\vect{\psi} \in \Delta(A_{1}) \times \dots \times \Delta(A_{n})$ a (mixed) strategy profile.
-A strategy $\psi$ for player $i \in N$ is a pure strategy if $\psi(a) = 1$ for some $a \in A_{i}$.
-A strategy profile $\vect{\psi}$ is a pure strategy profile if $\psi_{i}$ is a pure strategy for each $i \in N$.
-For convenience, we may denote a pure strategy $\psi$ for player $i \in N$ directly by the action $a \in A_{i}$ such that $\psi(a) = 1$.
-Likewise, we may denote a pure strategy profile $\vect{\psi}$ directly by the action profile $\vect{a} \in A$ such that $\psi_{i}(a_{i}) = 1$ for each player $i \in N$.
-The expected utility of a strategy profile $\vect{\psi}$ is defined as:
-\begin{equation*}
-	u_{i}(\vect{\psi}) = \sum_{\vect{a} \in A} u_{i}(\vect{a}) \prod_{j \in N} \psi_{j}(a_{j})
-\end{equation*}
+% \subsection{Normal-Form Games}
+% An ($n$-player) normal-form game is a tuple $(N, A, \vect{u})$ where $N = \{ 1, \dots, n \}$ is a finite set of players, $A = A_{1} \times \dots \times A_{n}$ is a set of action profiles with $A_{i}$ the (possibly infinite) set of actions available to player $i \in N$, and $\vect{u} = (u_{1}, \dots, u_{n})$ is a profile of utility functions with $u_{i} : A \to \mathbb{R}$ the utility function for~$i$.
+% A (mixed) strategy for player $i \in N$ is a probability distribution $\psi \in \Delta(A_{i})$ with $\vect{\psi} \in \Delta(A_{1}) \times \dots \times \Delta(A_{n})$ a (mixed) strategy profile.
+% A strategy $\psi$ for player $i \in N$ is a pure strategy if $\psi(a) = 1$ for some $a \in A_{i}$.
+% A strategy profile $\vect{\psi}$ is a pure strategy profile if $\psi_{i}$ is a pure strategy for each $i \in N$.
+% For convenience, we may denote a pure strategy $\psi$ for player $i \in N$ directly by the action $a \in A_{i}$ such that $\psi(a) = 1$.
+% Likewise, we may denote a pure strategy profile $\vect{\psi}$ directly by the action profile $\vect{a} \in A$ such that $\psi_{i}(a_{i}) = 1$ for each player $i \in N$.
+% The expected utility of a strategy profile $\vect{\psi}$ is defined as:
+% \begin{equation*}
+% 	u_{i}(\vect{\psi}) = \sum_{\vect{a} \in A} u_{i}(\vect{a}) \prod_{j \in N} \psi_{j}(a_{j})
+% \end{equation*}
+%
+% In game theory, a solution concept is a prediction of how a game will be played.
+% Solution concepts are typically based on the idea that each player will try to maximise their expected utility under the assumption that other players will do the same.
+% A feasible deviation from strategy profile $\vect{\psi}$ by player $i \in N$ is a strategy profile $\vect{\psi'} = (\vect{\psi}_{-i}, \psi')$ where $\psi'$ is a strategy for $i$.
+% A strategy profile $\vect{\psi}$ is a Nash equilibrium if no player $i \in N$ has a feasible deviation $\vect{\psi'}$ from $\vect{\psi}$ such that $u_{i}(\vect{\psi'}) > u_{i}(\vect{\psi})$.
+% Every normal-form game with a finite set of action profiles is guaranteed to have at least one (not necessarily pure) Nash equilibrium~\cite{Nash:AM:1951}.
+% A Nash equilibrium is also guaranteed to exist for certain classes of normal-form game with an infinite set of action profiles~\cite{}.
+%
+% \subsection{Markov Games}
+% A (fully observable) Markov game is a tuple $(N, S, A, T, \vect{R})$ where
+% $N = \{ 1, \dots, n \}$ is a finite set of players,
+% $S$ is a (possibly infinite) set of states,
+% $A = A_{1} \times \dots \times A_{n}$ is a set of action profiles with $A_{i}$ the (possibly infinite) set of actions available to player $i \in N$,
+% $T : S \times A \to \Delta(S)$ is a (stochastic) transition function, and
+% $\vect{R} = (R_{1}, \dots, R_{n})$ is a profile of reward functions with $R_{i} : S \times A \times S \to \mathbb{R}$ the reward function for player $i \in N$.
+% A Markov game is zero-sum if $\sum_{i \in N} R_{i}(s, \vect{a}, s') = 0$ for each $\vect{a} \in A$ and all $s, s' \in S$.
+%
+% Markov games (also known as stochastic games~\cite{Shapley:PNAS:1953}) are composed of a sequence of normal-form games, called stage games, where players seek to optimise their return for the whole game rather than for individual stage games.
+% The current stage game is determined by the current state, and players transition between states by executing actions simultaneously.
+% The game is said to be fully observable because players are assumed to observe the current (shared) state at each decision step.
+% Let $T(s, \vect{a}, s')$ denote the probability of transitioning to state $s' \in S$ after executing action profile $\vect{a} \in A$ in state $s \in S$ according to probability distribution $T(s, \vect{a})$.
+% The probability of transitioning to state $s' \in S$ after executing strategy profile $\vect{\psi}$ in state $s \in S$ is:
+% \begin{equation*}
+%     T(s, \vect{\psi}, s') = \prod_{\vect{a} \in A} T(s, \vect{a}, s') \prod_{j \in N} \psi_{j}(a_{j})
+% \end{equation*}
+% The stage game for state $s \in S$ is a normal-form game $(N, A, \vect{u})$ where the utility function $u_{i}$ for player $i \in N$ is defined for each action profile $\vect{a} \in A$ as the immediate expected reward:
+% \begin{equation*}
+%     u_{i}(\vect{a}) = \sum_{s' \in S} T(s, \vect{a}, s') R_{i}(s, \vect{a}, s')
+% \end{equation*}
+% Markov games subsume numerous other frameworks, including repeated games when $|S| = 1$, and Markov decision processes (MDPs) when $|N| = 1$.
+%
+% Solutions to Markov games are represented as functions, called policies, that map \emph{histories} to strategies.
+% An execution is a possibly infinite sequence of states and action profiles $(s_{1}, \vect{a}_{1}, s_{2}, \vect{a}_{2}, \dots)$.
+% A history of length $t$ is a finite execution $h_{t} = (s_{1},a_{1},$ $\dots, a_{t-1}, s_{t})$ ending in a state.
+% Let $H_{t}$ be the set of histories of length $t$ with $D = \{ 1, 2, \dots, t_{\max} \}$ the set of decision-steps up to horizon $t_{\max} \in \mathbb{N} \cup \{ \infty \}$ and $H = \{ h \in H_{t} \mid t \in D \}$ the set of histories up to $t_{\max}$.
+% A (stochastic or mixed) policy for player $i \in N$ is a function $\pi_{i} : H' \to \Delta(A_{i})$ where $H' \subseteq H$.
+% Let $\pi_{i}(h, a)$ denote the probability that player $i \in N$ should execute action $a \in A_{i}$ in history $h \in H'$ according to strategy $\pi_{i}(h)$.
+% A policy $\pi_{i}$ for player $i \in N$ is a complete policy if $H' = H$, otherwise $\pi_{i}$ is a partial policy.
+% A policy $\pi_{i}$ for player $i \in N$ is a deterministic (or pure) policy if $\pi_{i}(h, a) = 1$ for each $h \in H'$ and some $a \in A_{i}$.
+% For convenience, we may denote a pure policy $\pi_{i}$ for player $i \in N$ directly by a policy $\pi_{i}' : H' \to A$ where $\pi_{i}'(h) = a$ such that $\pi_{i}(h, a) = 1$.
+% A policy $\pi_{i}$ for player $i \in N$ is Markovian if $\pi_{i}(h_{t}) = \pi_{i}(h_{t'})$ for all $h_{t}, h_{t'} \in H'$ such that $t = t'$ and $s_{t} = s_{t'}$.
+% A Markovian policy for player $i \in N$ may be written as $\pi_{i} : X \to \Delta(A_{i})$ where $X \subseteq S \times D$.
+% A Markovian policy $\pi_{i}$ for player $i \in N$ is a stationary policy if $\pi_{i}(s, t) = \pi_{i}(s, t')$ for all $(s, t), (s, t') \in X$, otherwise $\pi_{i}$ is a non-stationary policy.
+% A stationary Markovian policy for player $i \in N$ may be written as $\pi_{i} : S' \to \Delta(A_{i})$ where $S' \subseteq S$.
+% A tuple $\vect{\pi} = \left( \pi_{1}, \dots, \pi_{n} \right)$ is a policy profile over $H' \subseteq H$ if $\pi_{i}$ is a policy over $H'$ for each $i \in N$.
+% The strategy profile for history $h \in H'$ according to policy profile $\vect{\pi}$ is $\vect{\pi}(h) = \left( \pi_{1}(h), \dots, \pi_{n}(h) \right)$.
+%
+% Solutions are only well-defined for certain classes of Markov game.
+% Two common examples are finite-horizon Markov games and infinite-horizon (discounted reward) Markov games.
+% A finite-horizon Markov game is a tuple $(\Gamma, t_{\max})$ where $\Gamma$ is a Markov game and $t_{\max} \in \mathbb{N}$ is a horizon.
+% An infinite-horizon Markov game is a tuple $(\Gamma, \gamma)$ where $\Gamma$ is a Markov game and $\gamma \in [0, 1)$ is a discount factor.
+% It is known that attention can be restricted to stationary Markovian policies in the case of infinite-horizon Markov games, and to non-stationary Markovian policies in the case of finite-horizon Markov games.
+% Unless stated otherwise, we will assume hereafter that all policies are either stationary or non-stationary Markovian policies.
+% For an infinite-horizon Markov game $(\Gamma, \gamma)$, the expected value of policy profile $\vect{\pi}$ for player $i \in N$ in state $s \in S$ is:
+% \begin{equation*}
+%     V_{i}(\vect{\pi}, s) = \sum_{s' \in S} T(s, \vect{\pi}(s), s') \left[ R_{i}(s, \vect{\pi}(s), s') + \gamma V_{i}(\vect{\pi}, s') \right]
+% \end{equation*}
+% For a finite-horizon Markov game $(\Gamma, t_{\max})$, the expected value of policy profile $\vect{\pi}$ for player $i \in N$ in state $s \in S$, with $t \in D \cup \{ 0 \}$ remaining decision-steps, is:
+% \begin{align*}
+%     V_{i}(\vect{\pi}, s, t) =
+%     \begin{cases}
+%         \sum\limits_{s' \in S} T(s, \vect{\pi}(s, t), s') \left[ R_{i}(s, \vect{\pi}(s, t), s') + V_{i}(\vect{\pi}, s', t-1) \right] & \text{if $t > 0$} \\
+%         0 & \text{if $t = 0$}
+%     \end{cases}
+% \end{align*}
+% A feasible deviation from policy profile $\vect{\pi}$ by player $i \in N$ is a policy profile $\vect{\pi'} = (\vect{\pi}_{-i}, \pi')$ where $\pi'$ is a policy for $i$.
+% A policy profile $\vect{\pi}$ is a Nash equilibrium if no player $i \in N$ has a feasible deviation $\vect{\pi'}$ from $\vect{\pi}$ such that $V_{i}(\vect{\pi'}, h) \ge V_{i}(\vect{\pi}, h)$ for each $h \in H'$ and $V_{i}(\vect{\pi'}, h') > V_{i}(\vect{\pi}, h')$ for some $h' \in H'$.
+%
+% \begin{note}[To do]
+%     Confirm that this definition of a Nash equilibrium is correct with respect to histories (or states, or time-indexed states).
+% \end{note}
 
-In game theory, a solution concept is a prediction of how a game will be played.
-Solution concepts are typically based on the idea that each player will try to maximise their expected utility under the assumption that other players will do the same.
-A feasible deviation from strategy profile $\vect{\psi}$ by player $i \in N$ is a strategy profile $\vect{\psi'} = (\vect{\psi}_{-i}, \psi')$ where $\psi'$ is a strategy for $i$.
-A strategy profile $\vect{\psi}$ is a Nash equilibrium if no player $i \in N$ has a feasible deviation $\vect{\psi'}$ from $\vect{\psi}$ such that $u_{i}(\vect{\psi'}) > u_{i}(\vect{\psi})$.
-Every normal-form game with a finite set of action profiles is guaranteed to have at least one (not necessarily pure) Nash equilibrium~\cite{Nash:AM:1951}.
-A Nash equilibrium is also guaranteed to exist for certain classes of normal-form game with an infinite set of action profiles~\cite{}.
-
-\subsection{Markov Games}
-A (fully observable) Markov game is a tuple $(N, S, A, T, \vect{R})$ where
-$N = \{ 1, \dots, n \}$ is a finite set of players,
-$S$ is a (possibly infinite) set of states,
-$A = A_{1} \times \dots \times A_{n}$ is a set of action profiles with $A_{i}$ the (possibly infinite) set of actions available to player $i \in N$,
-$T : S \times A \to \Delta(S)$ is a (stochastic) transition function, and
-$\vect{R} = (R_{1}, \dots, R_{n})$ is a profile of reward functions with $R_{i} : S \times A \times S \to \mathbb{R}$ the reward function for player $i \in N$.
-A Markov game is zero-sum if $\sum_{i \in N} R_{i}(s, \vect{a}, s') = 0$ for each $\vect{a} \in A$ and all $s, s' \in S$.
-
-Markov games (also known as stochastic games~\cite{Shapley:PNAS:1953}) are composed of a sequence of normal-form games, called stage games, where players seek to optimise their return for the whole game rather than for individual stage games.
-The current stage game is determined by the current state, and players transition between states by executing actions simultaneously.
-The game is said to be fully observable because players are assumed to observe the current (shared) state at each decision step.
+\subsection{SSP Games}
+A tuple $(N, S, A, T, R, G)$ is a (fully observable, two-player, zero-sum) stochastic shortest path (SSP) game if
+$N = \{ 1, 2 \}$ is a set of \textbf{players},
+$S$ is a (possibly infinite) set of \textbf{states},
+$A = A_{1} \times A_{2}$ is a set of \textbf{action profiles} with $A_{i}$ the (possibly infinite) set of \textbf{actions} available to player $i \in N$,
+$G \subseteq S$ is a (possibly infinite) set of \textbf{goal states} for player $1$,
+$T : S \times A \to \Delta(S)$ is a (stochastic) \textbf{transition function} such that $T(s, \vect{a}, s) = 1$ for each $s \in G$ and each $\vect{a} \in A$,
+and $R : S \times A \times S \to \mathbb{R}$ is a \textbf{reward function} for player $1$ such that $R(s, \vect{a}, s') = 0$ for each $s \in G$, each $\vect{a} \in A$, and each $s' \in S$.
 Let $T(s, \vect{a}, s')$ denote the probability of transitioning to state $s' \in S$ after executing action profile $\vect{a} \in A$ in state $s \in S$ according to probability distribution $T(s, \vect{a})$.
-The probability of transitioning to state $s' \in S$ after executing strategy profile $\vect{\psi}$ in state $s \in S$ is:
-\begin{equation*}
-    T(s, \vect{\psi}, s') = \prod_{\vect{a} \in A} T(s, \vect{a}, s') \prod_{j \in N} \psi_{j}(a_{j})
-\end{equation*}
-The stage game for state $s \in S$ is a normal-form game $(N, A, \vect{u})$ where the utility function $u_{i}$ for player $i \in N$ is defined for each action profile $\vect{a} \in A$ as the immediate expected reward:
-\begin{equation*}
-    u_{i}(\vect{a}) = \sum_{s' \in S} T(s, \vect{a}, s') R_{i}(s, \vect{a}, s')
-\end{equation*}
-Markov games subsume numerous other frameworks, including repeated games when $|S| = 1$, and Markov decision processes (MDPs) when $|N| = 1$.
-
-Solutions to Markov games are represented as functions, called policies, that map \emph{histories} to strategies.
-An execution is a possibly infinite sequence of states and action profiles $(s_{1}, \vect{a}_{1}, s_{2}, \vect{a}_{2}, \dots)$.
-A history of length $t$ is a finite execution $h_{t} = (s_{1},a_{1},$ $\dots, a_{t-1}, s_{t})$ ending in a state.
+An \textbf{execution} is a possibly infinite sequence $(s_{1}, \vect{a}_{1}, s_{2}, \vect{a}_{2}, \dots)$ of states and action profiles.
+A \textbf{history} of length $t$ is a finite execution $h_{t} = (s_{1}, a_{1}, \dots, a_{t-1}, s_{t})$ ending in a state.
 Let $H_{t}$ be the set of histories of length $t$ with $D = \{ 1, 2, \dots, t_{\max} \}$ the set of decision-steps up to horizon $t_{\max} \in \mathbb{N} \cup \{ \infty \}$ and $H = \{ h \in H_{t} \mid t \in D \}$ the set of histories up to $t_{\max}$.
-A (stochastic or mixed) policy for player $i \in N$ is a function $\pi_{i} : H' \to \Delta(A_{i})$ where $H' \subseteq H$.
-Let $\pi_{i}(h, a)$ denote the probability that player $i \in N$ should execute action $a \in A_{i}$ in history $h \in H'$ according to strategy $\pi_{i}(h)$.
-A policy $\pi_{i}$ for player $i \in N$ is a complete policy if $H' = H$, otherwise $\pi_{i}$ is a partial policy.
-A policy $\pi_{i}$ for player $i \in N$ is a deterministic (or pure) policy if $\pi_{i}(h, a) = 1$ for each $h \in H'$ and some $a \in A_{i}$.
-For convenience, we may denote a deterministic policy $\pi_{i}$ for player $i \in N$ directly by a policy $\pi_{i}' : H' \to A$ where $\pi_{i}'(h) = a$ such that $\pi_{i}(h, a) = 1$.
-A policy $\pi_{i}$ for player $i \in N$ is Markovian if $\pi_{i}(h_{t}) = \pi_{i}(h_{t'})$ for all $h_{t}, h_{t'} \in H'$ such that $t = t'$ and $s_{t} = s_{t'}$.
-A Markovian policy for player $i \in N$ may be written as $\pi_{i} : X \to \Delta(A_{i})$ where $X \subseteq S \times D$.
-A Markovian policy $\pi_{i}$ for player $i \in N$ is a stationary policy if $\pi_{i}(s, t) = \pi_{i}(s, t')$ for all $(s, t), (s, t') \in X$, otherwise $\pi_{i}$ is a non-stationary policy.
-A stationary Markovian policy for player $i \in N$ may be written as $\pi_{i} : S' \to \Delta(A_{i})$ where $S' \subseteq S$.
-A tuple $\vect{\pi} = \left( \pi_{1}, \dots, \pi_{n} \right)$ is a policy profile over $H' \subseteq H$ if $\pi_{i}$ is a policy over $H'$ for each $i \in N$.
-The strategy profile for history $h \in H'$ according to policy profile $\vect{\pi}$ is $\vect{\pi}(h) = \left( \pi_{1}(h), \dots, \pi_{n}(h) \right)$.
 
-Solutions are only well-defined for certain classes of Markov game.
-Two common examples are finite-horizon Markov games and infinite-horizon (discounted reward) Markov games.
-A finite-horizon Markov game is a tuple $(\Gamma, t_{\max})$ where $\Gamma$ is a Markov game and $t_{\max} \in \mathbb{N}$ is a horizon.
-An infinite-horizon Markov game is a tuple $(\Gamma, \gamma)$ where $\Gamma$ is a Markov game and $\gamma \in [0, 1)$ is a discount fbody.
-It is known that attention can be restricted to stationary Markovian policies in the case of infinite-horizon Markov games, and to non-stationary Markovian policies in the case of finite-horizon Markov games.
-Unless stated otherwise, we will assume hereafter that all policies are either stationary or non-stationary Markovian policies.
-For an infinite-horizon Markov game $(\Gamma, \gamma)$, the expected value of policy profile $\vect{\pi}$ for player $i \in N$ in state $s \in S$ is:
-\begin{equation*}
-    V_{i}(\vect{\pi}, s) = \sum_{s' \in S} T(s, \vect{\pi}(s), s') \left[ R_{i}(s, \vect{\pi}(s), s') + \gamma V_{i}(\vect{\pi}, s') \right]
-\end{equation*}
-For a finite-horizon Markov game $(\Gamma, t_{\max})$, the expected value of policy profile $\vect{\pi}$ for player $i \in N$ in state $s \in S$, with $t \in D \cup \{ 0 \}$ remaining decision-steps, is:
-\begin{align*}
-    V_{i}(\vect{\pi}, s, t) =
-    \begin{cases}
-        \sum\limits_{s' \in S} T(s, \vect{\pi}(s, t), s') \left[ R_{i}(s, \vect{\pi}(s, t), s') + V_{i}(\vect{\pi}, s', t-1) \right] & \text{if $t > 0$} \\
-        0 & \text{if $t = 0$}
-    \end{cases}
-\end{align*}
-A feasible deviation from policy profile $\vect{\pi}$ by player $i \in N$ is a policy profile $\vect{\pi'} = (\vect{\pi}_{-i}, \pi')$ where $\pi'$ is a policy for $i$.
-A policy profile $\vect{\pi}$ is a Nash equilibrium if no player $i \in N$ has a feasible deviation $\vect{\pi'}$ from $\vect{\pi}$ such that $V_{i}(\vect{\pi'}, h) \ge V_{i}(\vect{\pi}, h)$ for each $h \in H'$ and $V_{i}(\vect{\pi'}, h') > V_{i}(\vect{\pi}, h')$ for some $h' \in H'$.
+A (mixed) \textbf{strategy} for player $i \in N$ is a probability distribution $\psi \in \Delta(A_{i})$.
+A strategy $\psi$ for player $i \in N$ is a \textbf{pure strategy} if $\psi(a) = 1$ for some $a \in A_{i}$.
+A (mixed) \textbf{policy} for player $i \in N$ is a function $\pi_{i} : H \to \Delta(A_{i})$.
+Let $\pi_{i}(h, a)$ denote the probability that player $i \in N$ will execute action $a \in A_{i}$ in history $h \in H$ according to strategy $\pi_{i}(h)$.
+A policy $\pi_{i}$ for player $i \in N$ is \textbf{pure} if $\pi_{i}(h, a) = 1$ for each $h \in H$ and some $a \in A_{i}$.
+A pure policy for player $i \in N$ may be written as $\pi_{i} : H \to A$.
+A policy $\pi_{i}$ for player $i \in N$ is \textbf{Markovian} if $\pi_{i}(h) = \pi_{i}(h')$ for all $h, h' \in H$ such that $t = t'$ and $s = s'$ where $h$ ends in state $s \in S$ after $t \in D$ timesteps (resp.\ $h'$ ends in state $s' \in S$ after $t' \in D$ timesteps).
+A Markovian policy for player $i \in N$ may be written as $\pi_{i} : S \times D \to \Delta(A_{i})$.
+A Markovian policy $\pi_{i}$ for player $i \in N$ is \textbf{stationary} if $\pi_{i}(s, t) = \pi_{i}(s, t')$ for each $s \in S$ and all $t, t' \in D$, otherwise $\pi_{i}$ is \textbf{non-stationary}.
+A stationary policy for player $i \in N$ may be written as $\pi_{i} : S \to \Delta(A_{i})$.
 
-\begin{note}[To do]
-    Confirm that this definition of a Nash equilibrium is correct with respect to histories (or states, or time-indexed states).
-\end{note}
+A \textbf{policy profile} is a tuple $\vect{\pi} = \left( \pi_{1}, \pi_{2} \right)$ where $\pi_{i}$ is a policy for player $i \in N$.
+The (mixed) \textbf{strategy profile} for history $h \in H$ according to policy profile $\vect{\pi}$ is $\vect{\pi}(h) = \left( \pi_{1}(h), \pi_{2}(h) \right)$.
+A strategy profile $\vect{\pi}(h)$ for history $h \in H$ is a \textbf{pure strategy profile} for $h$ if $\pi_{i}(h)$ is a pure strategy for each $i \in N$.
+Let $\vect{\pi}(h, \vect{a}) = \prod_{i \in N} \pi_{i}(h, a_{i})$ be the probability that action profile $\vect{a} \in A$ will be executed in history $h \in H$ according to policy profile~$\vect{\pi}$.
+The \textbf{expected value} of policy profile $\vect{\pi}$ for player $i \in N$ in history $h \in H$ is:
+\begin{equation}
+    V_{i}(\vect{\pi}, h) = \sum_{\vect{a} \in A} \vect{\pi}(h, \vect{a}) \sum_{s' \in S} T(s, \vect{a}, s') \left[ R_{i}(s, \vect{a}, s') + V_{i}(\vect{\pi}, [h, \vect{a}, s']) \right]
+\end{equation}
+where $h$ ends in state $s \in S$.
+Standard notions of optimality are not well-defined in SSP games when $V_{i}(\vect{\pi}, h) = \infty$ for any history $h \in H$, or when $V_{i}(\vect{\pi}, h') = -\infty$ for each $h' \in H$.
+For this reason, solution definitions typically rely on assumptions that the process will (eventually) terminate by reaching a goal state, ensuring finite expected value for a given policy profile.
+Let $\mathbb{P}(s \mid h, \vect{\pi}, t)$ denote the probability of transitioning from history $h \in H$ to state $s \in S$ within $t \in \mathbb{N}$ timesteps by following policy profile $\vect{\pi}$.
+A policy $\pi_{1}$ for player $1$ is \textbf{proper} at history $h \in H$ if there exists some $t \in \mathbb{N}$ such that:
+\begin{equation}
+    \mathbb{P}(G \mid h, \pi_{1}, \pi_{2}, t) = \sum_{s' \in G} \mathbb{P}(s' \mid h, \pi_{1}, \pi_{2}, t) = 1
+\end{equation}
+for any policy $\pi_{2}$ for player $2$, otherwise $\pi_{1}$ is \textbf{improper} at $h$.
+A policy $\pi_{1}$ for player $1$ is proper if $\pi_{1}$ is proper at each history $h \in H$, otherwise $\pi_{1}$ is improper.\footnote{The notions of proper and improper policies are undefined for player $2$.}
+An SSP game is \textbf{solvable} if
+there exists a policy $\pi_{1}$ for player $1$ such that $\pi_{1}$ is proper
+and $V(\pi_{1}', h) = -\infty$ for any (improper) policy $\pi_{1}'$ for player $1$ such that $\pi_{1}'$ is improper at history $h \in H$.
+A policy $\pi_{i}^{*}$ for player $1$ in a solvable SSP game is an \textbf{expectiminimax} policy for player $1$ if $\pi_{i}^{*}$ satisfies:
+\begin{equation}
+    \argmin_{\vect{\pi}_{-i}} V_{i}(\pi_{i}^{*}, \vect{\pi}_{-i}, h) \ge \argmin_{\vect{\pi}_{-i}'} V_{i}(\pi_{i}', \vect{\pi}_{-i}', h)
+\end{equation}
+for each policy $\pi_{i}'$ for player $1$ and each history $h \in H$.
+It is known that attention in SSP games can be restricted to stationary pure policies~\cite{}.
 
-\subsection{Stochastic Shortest Path Games}
-A (fully observable) stochastic shortest path (SSP) game is a tuple $(N, S, A, T, \vect{C}, G)$ where
-$N = \{ 1, \dots, n \}$ is a finite set of players,
-$S$ is a (possibly infinite) set of states,
-$A = A_{1} \times \dots \times A_{n}$ is a set of action profiles with $A_{i}$ the (possibly infinite) set of actions available to player $i \in N$,
-$T : S \times A \to \Delta(S)$ is a (stochastic) transition function,
-$\vect{C} = (C_{1}, \dots, C_{n})$ is a profile of cost functions with $C_{i} : S \times A \times S \to \mathbb{R}^{\ge 0}$ the (non-negative) cost function for player $i \in N$,
-and $G = G_{1} \cup \dots \cup G_{n}$ is a non-empty set of goal states with $G_{i} \subseteq S$ the (possibly empty, possibly infinite) set of goal states for player $i \in N$.
-Moreover, each cost function $C_{i}$ should satisfy $C_{i}(s, a, s') = 0$ if $s \in G$, or $C_{i}(s, a, s') > 0$ otherwise, for all $s, s' \in S$ and each $a \in A$.
-Similarly, the transition function $T$ should satisfy $T(s, a, s) = 1$ for all $s \in G$ and each $a \in A$.
-SSP games subsume numerous other frameworks, including finite- and infinite-horizon Markov games as well as SSP MDPs (which in turn subsume finite- and infinite-horizon MDPs as well as classical planning)~\cite{Bertsekas:book:1995,Patek:PhD:1997,Patek:JCO:1999,Kolobov:book:2012}.
+% \subsection{SSP$_{s_{1}}$ Games}
+% A policy $\pi_{i}$ for player $i \in N$ is \textbf{complete} if $H' = H$, otherwise $\pi_{i}$ is \textbf{partial}.
+% A policy $\pi_{i}$ for player $i \in N$ is \textbf{closed} at state $s_{1} \in S$ if for each $h \in H$ such that $h$ is reachable from $s_{1}$ by following $\pi_{i}$ and facing any opposing policy profile $\vect{\pi}_{-i}$, then $h \in H'$.
 
-\begin{note}
-    I have only found definitions of $2$-player zero-sum SSP games in the literature, so this definition of an $n$-player general-sum SSP game is only an informed guess.
-    The definition says that all players should seek to minimize their cost for the duration of the game, as is the case in Markov games, but that at least one player should seek to arrive in a goal state where the game will terminate.
-    The definition does not explicitly capture the notion that an adversary would seek to block the goal-directed player from achieving their goal, but the fact that this notion appears in existing definitions may be due to those definitions focusing on zero-sum games.
-\end{note}
+% \newpage
+% \section{Time-Limited SSPs}
+% A tuple $(S, A, T, R, G)$ is a (fully observable) stochastic shortest path MDP (SSP) if
+% $S$ is a (possibly infinite) set of states,
+% $A$ is a (possibly infinite) set of actions,
+% $G \subseteq S$ is a (possibly infinite) set of goal states,
+% $T : S \times A \to \Delta(S)$ is a (stochastic) transition function satisfying $T(s, a, s) = 1$ for each $s \in G$ and each $a \in A$,
+% and $R : S \times A \times S \to \mathbb{R}$ is a reward function satisfying $R(s, a, s') = 0$ for each $s \in G$, each $a \in A$, and each $s' \in S$.
+% In the setting of SSPs it is known that attention can be restricted to stationary policies~\cite{Bertsekas:book:1995}.
+% Let $\mathbb{P}(s \mid h, \vect{\pi}, t)$ denote the probability of transitioning from history $h \in H$ to state $s \in S$ within $t \in \mathbb{N}$ timesteps by following policy $\pi$.
+% A policy $\pi$ is proper at state $s \in S$ if:
+% \begin{equation*}
+%     \mathbb{P}(G \mid h, \pi, t) = \sum_{s' \in G} \mathbb{P}(s' \mid h, \pi, t) = 1
+% \end{equation*}
+% for each history $h \in H$ such that $h$ terminates at $s$, otherwise $\pi$ is improper at $s$.
+% A policy $\pi$ is proper if $\pi$ is proper at each state $s \in S$, otherwise $\pi_{1}$ is improper.
+% An SSP is solvable if
+% (i) there exists a policy $\pi$ such that $\pi$ is proper
+% and (ii) $V(\pi', s) = -\infty$ for any (improper) policy $\pi'$ such that $\pi'$ is improper at state $s \in S$.
+% A typical method to guarantee condition (ii) is to require for all $s, s' \in S$ and each $a \in A$ that $R(s, a, s') = 0$ if $s \in G$, and $R(s, a, s') < 0$ otherwise.
+% In other words, every transition from a non-terminal state has a positive cost, which has the effect of causing all improper (i.e.\ non-terminating) policies to accumulate infinite cost.
+%
+% A tuple $(S, A, T, R, G, s_{1})$ is a initialised SSP if
+% $(S, A, T, R, G)$ is an SSP
+% and $s_{1} \in S$ is an initial state.
+% A policy $\pi : S' \to A$ is closed at $s_{1}$ if for each state $s \in S$ such that $s$ is reachable from $s_{1}$  following $\pi$ then $s \in S'$.
+%
+% \begin{definition}
+%     A tuple $(S, A, T, R, G, E, s_{1})$ is a initialised SSP with terminal states if:
+%     \begin{itemize}
+%         \item $(S, A, T, R, G, s_{1})$ is an initialised SSP
+%         \item $E \subseteq S$ is a (possibly infinite) set of terminal states
+%         \item $T(s, a, s) = 1$ for each $s \in G \cup E$ and each $a \in A$
+%         \item $R(s, a, s') = 0$ for each $s \in G \cup E$, each $a \in A$, and each $s' \in S$
+%     \end{itemize}
+% \end{definition}
+%
+% \begin{definition}
+%     Let $(S, A, T, R, G, s_{1})$ be an initialised SSP and $t_{\max} \in \mathbb{N}$ be a horizon.
+%     An initialised SSP with terminal states $(S', A, T', R', G', E, s_{1})$ is a time-limited SSP, denoted $(S, A, T, R, G, s_{1}, t_{\max})$, if:
+%     \begin{itemize}
+%         \item $D = \{ 1, \dots, t_{\max} \}$ is a set of decision steps (or timesteps)
+%         \item $S' = S \times D$ is a set of states
+%         \item $G' = G \times D$ is a set of goal states
+%         \item $E = S \times \{ 0 \}$ is a set of terminal states
+%         \item $T' : S' \times A \to \Delta(S')$ is a (stochastic) transition function such that for each $s \in S$ and each $a \in A$:
+%             \begin{itemize}
+%                 \item $T'([s, 0], a, [s, 0]) = 1$
+%                 \item $T'([s, t], a, [s', t - 1]) = T(s, a, s')$ for each $s' \in S$ and each $t \in D \setminus \{ 0 \}$
+%             \end{itemize}
+%         \item $R' : S' \times A \times S' \to \mathbb{R}$ a reward function such that for each $s \in S$, each $t \in D$, and each $a \in A$:
+%             \begin{itemize}
+%                 \item $R'([s, 0], a, [s, t]) = 0$
+%                 \item $R'([s', t'], a, [s, t]) = R(s', a, s)$ for each $s' \in S$ and each $t' \in D \setminus \{ 0 \}$
+%             \end{itemize}
+%     \end{itemize}
+% \end{definition}
+%
+% It follows that if $\pi$ is a (stationary) proper policy for the time-limited SSP $(S', A, T',$ $R', G')$, then $\pi$ is also a (non-stationary) proper policy for the SSP $(S, A, T, R, G)$ where $\mathbb{P}(G \mid h_{1}, \pi, t_{\max}) = 1$ with $h_{1}$ the empty history.
+% Thus, time-limited SSPs are a special case of SSPs that require non-stationary policies, but still rely on stationary transition and reward functions (with the exception of special terminal states in $S \times \{ 0 \}$, which are absorbing and accumulate no cost/reward).
+% Despite their similarity, finite-horizon MDPs are not a special case of time-limited SSPs, except when $t = 1$ and $G = S$.
+%
+% \begin{note}
+%     Can we justify including $S \times \{ 0 \}$ in $G'$?
+%     Why would the agent bother acting in that case (e.g.\ surely executing the null action would be sufficient)?
+%     It may (only?) make sense in the multi-agent setting, but even there it is not completely intuitive.
+% \end{note}
+
+% \newpage
+% \section{Time-Limited SSP Games}
+% A tuple $(N, S, A, T, R, G)$ is a (fully observable, two-player, zero-sum) stochastic shortest path (SSP) game if
+% $N = \{ 1, 2 \}$ is a set of players,
+% $S$ is a (possibly infinite) set of states,
+% $A = A_{1} \times A_{2}$ is a set of action profiles with $A_{i}$ the (possibly infinite) set of actions available to player $i \in N$,
+% $G \subseteq S$ is a (possibly infinite) set of goal states for player $1$,
+% $T : S \times A \to \Delta(S)$ is a (stochastic) transition function such that $T(s, a, s) = 1$ for each $s \in G$ and each $a \in A$,
+% and $R : S \times A \times S \to \mathbb{R}$ a reward function for player $1$ such that $R(s, a, s') = 0$ for each $s \in G$, each $a \in A$, and each $s' \in S$.
+% Let $\mathbb{P}(s \mid h, \vect{\pi}, t)$ denote the probability of transitioning from history $h \in H$ to state $s \in S$ within $t \in \mathbb{N}$ timesteps by following policy profile $\vect{\pi}$.
+% A policy $\pi_{1}$ for player $1$ is proper at state $s \in S$ if:
+% \begin{equation*}
+%     \mathbb{P}(G \mid h, \pi_{1}, \pi_{2}, t) = \sum_{s' \in G} \mathbb{P}(s' \mid h, \pi_{1}, \pi_{2}, t) = 1
+% \end{equation*}
+% for each history $h \in H$ such that $h$ terminates at $s$ and for any policy $\pi_{2}$ for player $2$, otherwise $\pi_{1}$ is improper at $s$.
+% A policy $\pi_{1}$ for player $1$ is proper if $\pi_{1}$ is proper at each state $s \in S$, otherwise $\pi_{1}$ is improper.
+% An SSP game is solvable if
+% there exists a policy $\pi_{1}$ for player $1$ such that $\pi_{1}$ is proper
+% and $V(\pi_{1}', s) = -\infty$ for any (improper) policy $\pi_{1}'$ for player $1$ such that $\pi_{1}'$ is improper at state $s \in S$.
+%
+% \begin{definition}
+%     Let $(N, S, A, T, R, G)$ be an SSP game and $t_{\max} \in \mathbb{N}$ be a (finite-)horizon.
+%     An SSP $(S', A, T', R', G')$ is a time-limited SSP, denoted $(S, A, T, R, G, t_{\max})$, if:
+%     \begin{itemize}
+%         \item $D = \{ 1, \dots, t_{\max} \}$ is a set of decision steps (or timesteps)
+%         \item $S' = S \times D$ is a set of states
+%         \item $G' = (G \times D)$ is a set of goal states
+%         \item $T' : S' \times A \to \Delta(S')$ is a (stochastic) transition function such that for each $s \in S$ and each $a \in A$:
+%             \begin{itemize}
+%                 \item $T'([s, 0], a, [s, 0]) = 1$
+%                 \item $T'([s, t], a, [s', t - 1]) = T(s, a, s')$ for each $s' \in S$ and each $t \in D \setminus \{ 0 \}$
+%             \end{itemize}
+%         \item $R' : S' \times A \times S' \to \mathbb{R}$ a reward function such that for each $s \in S$, each $t \in D$, and each $a \in A$:
+%             \begin{itemize}
+%                 \item $R'([s, 0], a, [s, t]) = 0$
+%                 \item $R'([s', t'], a, [s, t]) = R(s', a, s)$ for each $s' \in S$ and each $t' \in D \setminus \{ 0 \}$
+%             \end{itemize}
+%     \end{itemize}
+% \end{definition}
+
+% \begin{definition}
+%     An SSP game is cost-based if for each $a \in A$ and each $s \in S$:
+%     \begin{itemize}
+%         \item $R(s', a, s) = 0$ for each $s' \in G$
+%         \item $R(s'', a, s) < 0$ for each $s'' \in S \setminus G$
+%     \end{itemize}
+% \end{definition}
+%
+% \begin{proposition}
+%     A cost-based SSP game is solvable if there exists a policy $\pi_{1}$ for player $1$ such that $\pi_{1}$ is proper.
+% \end{proposition}
+%
+% \begin{proof}[Proof Sketch]
+%     The contraints on reward functions required by cost-based SSP games guarantee that the second requirement of solvable SSP games is satisfied.
+% \end{proof}
+%
+% \begin{definition}
+%     A rooted SSP game is a tuple $(\mathcal{G}, s_{1})$ where $\mathcal{G}$ is an SSP game and $s_{1} \in S$ is an initial state.
+% \end{definition}
+%
+% \begin{definition}
+%     A finite-horizon SSP game is a tuple $(\mathcal{G}, t_{\max})$ where $\mathcal{G}$ is an SSP game and $t_{\max} \in \mathbb{N}$ is a horizon.
+% \end{definition}
 
 \newpage
 \section{Framework}\label{section:framework}
@@ -229,7 +389,7 @@ SSP games subsume numerous other frameworks, including finite- and infinite-hori
 \end{definition}
 
 \begin{corollary}
-    $2 \le |N| \le |B| \le |E|$.
+    $|N| \le |B| \le |E|$.
 \end{corollary}
 
 \begin{figure}[tbhp]
@@ -250,7 +410,7 @@ SSP games subsume numerous other frameworks, including finite- and infinite-hori
             [Agent, label={above right:\emph{Test Generator}}
                 [Body [Effector] [$\dots$] [Effector]]
                 [$\dots$ [$\dots$]]
-                [Body [Effector] [$\dots$] [Effector, edge label={node[midway,above right]{\emph{Simulator}}}]]
+                [Body [Effector] [$\dots$] [Effector, edge label={node[midway,above  right]{\emph{Simulator}}}]]
             ]
         ]
         \draw (-5.25, -0.25) [dotted] rectangle (-2, -1.2);
@@ -280,45 +440,95 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
 
 \begin{definition}\label{definition:game}
     Let $(N, B, E, f_{B,N}, f_{E,B})$ be an agent-body-effector model.
-    A stochastic shortest path game $(N, S, A, T, \vect{C}, G)$ is a simulator-based testing game if:
+    An SSP game $(N, S, A, T, \vect{R}, G)$ is a test generation game if:
     \begin{itemize}
-        \item $N = \{ 1, \dots, n \}$ such that $n \ge 2$ with $1$ the ego agent and $2, \dots, n$ the tester agents
+        \item $N = \{ 1, 2 \}$ with $1$ the tester agent and $2$ the ego agent
         \item $A_{i} = A(E(B(\{ i \})))$ is the set of actions available to agent $i \in N$
+        \item $G \subseteq S$ is an assertion (or the precondition of an assertion)
+        \item $(N, S, A, T, \vect{R}, G)$ is solvable
     \end{itemize}
 \end{definition}
 
-\begin{note}[To do]
-    Formally define the notion of proper policies.
-\end{note}
+In the context of a test generation game, a test is an optimal policy (e.g.\ an expectiminimax policy) for player $1$.
+An example of such a policy is shown in Figures~\ref{figure:game_tree} and~\ref{figure:test}.
+In other words, a test guarantees the triggering of an assertion within a finite number of timesteps while maximizing reward (or minimizing cost) for the tester agent, regardless of actions taken by the ego agent or of any chance outcomes.
+A test is also applicable (and optimal) for any initial state of a simulation run.
 
-\begin{lemma}\label{lemma:dead_ends}
-    Let $\mathcal{G}$ be a simulator-based testing game.
-    There exists a proper policy profile for $\mathcal{G}$ if and only if $\mathcal{G}$ does not exhibit dead-ends.
-\end{lemma}
+\begin{landscape}
+\begin{figure}[p]
+	\footnotesize
+    \begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/tree-run}
+    	\caption{Initial run with incomplete policy $\pi_{1} = \{ s_{1} \mapsto a_{1}, s_{4} \mapsto a_{8} \}$ such that $s_{31} \in G$}
+    \end{subfigure}
+    \begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/tree-run-outcome}
+    	\caption{Subsequent run with outcome not anticipated by $\pi_{1}$}
+    \end{subfigure}
+    \begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/tree-run-action}
+    	\caption{Subsequent run with ego-action not anticipated by $\pi_{1}$}
+    \end{subfigure}
+    \begin{subfigure}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/tree-test}
+    	\caption{Closed expectiminimax policy $\pi_{1}^{*} = \{ s_{1} \mapsto a_{1}, s_{2} \mapsto a_{4}, s_{3} \mapsto a_{5}, s_{4} \mapsto a_{7}, s_{5} \mapsto a_{10} \}$ such that $\{ s_{10}, \dots, s_{13}, s_{18}, \dots, s_{21}, s_{30}, \dots, s_{37}  \} \subseteq G$}
+    \end{subfigure}
+	\caption{SSP game with initial state $s_{1} \in S$ ($2$ denotes ego decision nodes, $\spadesuit$ denotes chance nodes, policies are stationary and pure)}
+	\label{figure:game_tree}
+\end{figure}
+\end{landscape}
 
-\begin{proof}[Proof Sketch]
-    The proof may be analogous to the proofs for SSP MDPs~\cite{Kolobov:book:2012}, assuming it has not been proven already.
-\end{proof}
+\begin{figure}[htbp]
+	\footnotesize
+    \centering
+    \begin{forest}
+        [$a_{1}$, draw, circle
+            [{}, draw, circle, inner sep=0.25pt, fill, edge label={node[midway, above left]{$a_{1}'$}}
+                [$a_{3}$, draw, circle, edge label={node[midway, above left]{$s_{2}$}}, edge={-latex}]
+                [$a_{5}$, draw, circle, edge label={node[midway, above right]{$s_{3}$}}, edge={-latex}]
+            ]
+            [{}, draw, circle, inner sep=0.25pt, fill, edge label={node[midway, above right]{$a_{2}'$}}
+                [$a_{8}$, draw, circle, edge label={node[midway, above left]{$s_{4}$}}, edge={-latex}]
+                [$a_{9}$, draw, circle, edge label={node[midway, above right]{$s_{5}$}}, edge={-latex}]
+            ]
+        ]
+    \end{forest}
+	\caption{Visualisation of $\pi^{*}$ from Figure~\ref{figure:game_tree}}
+	\label{figure:test}
+\end{figure}
 
-\begin{definition}
-    A time-limited test generation game is a tuple $(\mathcal{G}, t_{\max})$ where $\mathcal{G}$ is a test generation game and $t_{\max} \in \mathbb{N}$ is a (finite-)horizon.
-\end{definition}
-
-\begin{proposition}
-    Let $(\mathcal{G}, t_{\max})$ be a time-limited test generation game.
-    There exists a proper policy profile for $(\mathcal{G}, t_{\max})$.
-\end{proposition}
-
-\begin{proof}[Proof Sketch]
-    The set of states $S$ can be translated into a new set of states $S' = S \times \{ 0, \dots, t_{\max} \}$.
-    The set of goal states $G$ can be translated into a new set of goal states $G' = \left( G \times \{ 0, \dots, t_{\max} \} \right) \cup \left( S \times \{ 0 \} \right)$.
-    The translated game $(\mathcal{G}', t_{\max})$ does not exhibit dead-ends because for any state $s \in S'$ there always exists a state $s' \in S \times \{ 0 \}$ such that $s'$ is reachable from $s$.
-    Thus, it follows from Lemma~\ref{lemma:dead_ends} that a proper policy profile for $G$ is guaranteed to exist.
-\end{proof}
+% \begin{lemma}\label{lemma:dead_ends}
+%     Let $\mathcal{G}$ be a simulator-based testing game.
+%     There exists a proper policy profile for $\mathcal{G}$ if and only if $\mathcal{G}$ does not exhibit dead-ends.
+% \end{lemma}
+%
+% \begin{proof}[Proof Sketch]
+%     The proof may be analogous to the proofs for SSPs~\cite{Kolobov:book:2012}, assuming it has not been proven already.
+% \end{proof}
+%
+% \begin{definition}
+%     A time-limited test generation game is a tuple $(\mathcal{G}, t_{\max})$ where $\mathcal{G}$ is a test generation game and $t_{\max} \in \mathbb{N}$ is a (finite-)horizon.
+% \end{definition}
+%
+% \begin{proposition}
+%     Let $(\mathcal{G}, t_{\max})$ be a time-limited test generation game.
+%     There exists a proper policy profile for $(\mathcal{G}, t_{\max})$.
+% \end{proposition}
+%
+% \begin{proof}[Proof Sketch]
+%     The set of states $S$ can be translated into a new set of states $S' = S \times \{ 0, \dots, t_{\max} \}$.
+%     The set of goal states $G$ can be translated into a new set of goal states $G' = \left( G \times \{ 0, \dots, t_{\max} \} \right) \cup \left( S \times \{ 0 \} \right)$.
+%     The translated game $(\mathcal{G}', t_{\max})$ does not exhibit dead-ends because for any state $s \in S'$ there always exists a state $s' \in S \times \{ 0 \}$ such that $s'$ is reachable from $s$.
+%     Thus, it follows from Lemma~\ref{lemma:dead_ends} that a proper policy profile for $G$ is guaranteed to exist.
+% \end{proof}
 
 % \begin{definition}
-%     Let $\pi_{1}$ be a deterministic policy and $\omega \subseteq S$ be a (test) assertion.
-%     An interesting test given $\pi_{1}$ and $\omega$ is a tuple $(s_{1}, \vect{\pi}_{-1})$ where $s_{1} \in S$ is an initial state and $\vect{\pi}_{-1}$ is a deterministic policy profile for the set of agents $N \setminus \{ 1 \}$ such that executing policy profile $(\pi_{1}, \vect{\pi}_{-1})$ in state $s_{1}$ leads to some state $s \in \omega$ within a finite number of timesteps.
+%     Let $\pi_{1}$ be a pure policy and $\omega \subseteq S$ be a (test) assertion.
+%     An interesting test given $\pi_{1}$ and $\omega$ is a tuple $(s_{1}, \vect{\pi}_{-1})$ where $s_{1} \in S$ is an initial state and $\vect{\pi}_{-1}$ is a pure policy profile for the set of agents $N \setminus \{ 1 \}$ such that executing policy profile $(\pi_{1}, \vect{\pi}_{-1})$ in state $s_{1}$ leads to some state $s \in \omega$ within a finite number of timesteps.
 % \end{definition}
 %
 % \begin{note}
@@ -326,7 +536,7 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
 % \end{note}
 %
 % \begin{note}
-%     We assume that a stochastic policy is always fixed to a deterministic policy by controlling the seed, but this means the test is only interesting with respect to that seed.
+%     We assume that a mixed policy is always fixed to a pure policy by controlling the seed, but this means the test is only interesting with respect to that seed.
 %     Is there a more general notion?
 % \end{note}
 %
@@ -336,7 +546,7 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
 %
 % \begin{definition}
 %     Let $\pi_{1}$ be an ego policy, $\omega \subseteq S$ be a (test) goal, and $\theta \in (0, 1]$ be a probability threshold.
-%     A satisficing test for $\pi_{1}$ with respect to $\omega$ is a tuple $(s_{1}, \vect{\pi}_{-1})$ where $s_{1} \in S$ is an initial state and $\vect{\pi}_{-1}$ is a deterministic policy profile for the set of agents $N \setminus \{ 1 \}$ such that executing policy profile $(\pi_{1}, \vect{\pi}_{-1})$ in state $s_{1}$ guarantees termination in some state $s \in \omega$ with probability $p \ge \theta$.
+%     A satisficing test for $\pi_{1}$ with respect to $\omega$ is a tuple $(s_{1}, \vect{\pi}_{-1})$ where $s_{1} \in S$ is an initial state and $\vect{\pi}_{-1}$ is a pure policy profile for the set of agents $N \setminus \{ 1 \}$ such that executing policy profile $(\pi_{1}, \vect{\pi}_{-1})$ in state $s_{1}$ guarantees termination in some state $s \in \omega$ with probability $p \ge \theta$.
 % \end{definition}
 %
 % \begin{note}
@@ -354,12 +564,12 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
 % \end{note}
 %
 % \begin{note}
-%     Do we need a horizon $t_{\max} \in \mathbb{N}$ and/or discount fbody $\gamma \in [0, 1)$?
+%     Do we need a horizon $t_{\max} \in \mathbb{N}$ and/or discount factor $\gamma \in [0, 1)$?
 %     For example:
 %     \begin{itemize}
-%         \item Finite-horizon Markov game with terminal states (horizon, terminal states, optional discount fbody)
-%         \item Infinite-horizon Markov game with terminal states (discount fbody, terminal states, no horizon)
-%         \item Indefinite-horizon Markov game (terminal states, no horizon, no discount fbody)
+%         \item Finite-horizon Markov game with terminal states (horizon, terminal states, optional discount factor)
+%         \item Infinite-horizon Markov game with terminal states (discount factor, terminal states, no horizon)
+%         \item Indefinite-horizon Markov game (terminal states, no horizon, no discount factor)
 %     \end{itemize}
 %     How to ensure early terminations are preferred (i.e.\ that longer runs do not have the opportunity to acrue more value)? How to guarantee that proper policies exist?
 % \end{note}
@@ -410,7 +620,7 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
                     [$\dots$ [$\dots$]]
                 ]
                 [Agent, label={above right:\emph{Test Generator}}
-                    [Pedestrian [Acceleration] [Steering, edge label={node[midway,above right]{~~~~~\emph{Simulator}}}]]
+                    [Pedestrian [Acceleration] [Steering, edge label={node[midway,above  right]{~~~~~\emph{Simulator}}}]]
                 ]
             ]
             \draw (-4.9, -0.25) [dotted] rectangle (-2, -1.2);
@@ -431,7 +641,7 @@ Thus, there exists a non-empty set of (multi-)actions available to each body (re
                 [Agent, label={above right:\emph{Test Generator}}
                     [Pedestrian [Acceleration] [Steering]]
                     [$\dots$ [$\dots$]]
-                    [Pedestrian [Acceleration] [Steering, edge label={node[midway,above right]{~~~~~\emph{Simulator}}}]]
+                    [Pedestrian [Acceleration] [Steering, edge label={node[midway,above  right]{~~~~~\emph{Simulator}}}]]
                 ]
             ]
             \draw (-4.15, -0.25) [dotted] rectangle (-1.25, -1.2);
@@ -463,7 +673,7 @@ and $o_{i} \in (-\pi, \pi]$ is an orientation (in radians).
 Let $b \in \mathbb{R}^{\ge 0}$ be a wheelbase constant.
 The positions of front and rear wheels $f_{i}, r_{i} \in \mathbb{R}^{2}$ in state $s_{i} = (p_{i}, v_{i}, o_{i})$ are:
 \begin{align}
-    f_{i} & = \left( p_{i} + \frac{b}{2} \cdot (\cos{o_{i}}, \sin{o_{i}}) \right) \\
+    f_{i} & = \left( p_{i} + \frac{b}{2} \cdot (\cos{o_{i}}, \sin{o_{i}}) \right) \label{equation:kinematics_first} \\
     r_{i} & = \left( p_{i} - \frac{b}{2} \cdot \left( \cos{o_{i}}, \sin{o_{i}} \right) \right)
 \end{align}
 A body has two effectors: throttle and steering.
@@ -477,9 +687,9 @@ If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, 
     r_{i+1} & = r_{i} + \left( v_{i} \cdot \lambda \cdot \left( \cos{o_{i}}, \sin{o_{i}} \right) \right) \\
     p_{i+1} & = \frac{f_{i+1} + r_{i+1}}{2}  \\
     v_{i+1} & = \max{ \left\{ v_{\min}, \min{ \left\{ v_{\max}, v_{i} + \left( \lambda \cdot t_{i} \right) \right\} } \right\} } \\
-    o_{i+1} & = \atantwo{ \left( f_{i+1}^{y} - r_{i+1}^{y}, f_{i+1}^{x} - r_{i+1}^{x} \right) }
+    o_{i+1} & = \atantwo{ \left( f_{i+1}^{y} - r_{i+1}^{y}, f_{i+1}^{x} - r_{i+1}^{x} \right) } \label{equation:kinematics_last}
 \end{align}
-The body kinematics from Equations 1--7 are illustrated in Figure~\ref{figure:kinematics}.
+The body kinematics from Equations~\ref{equation:kinematics_first}--\ref{equation:kinematics_last} are illustrated in Figure~\ref{figure:kinematics}.
 
 \begin{figure}[htbp]
     \centering
@@ -639,7 +849,7 @@ The body kinematics from Equations 1--7 are illustrated in Figure~\ref{figure:ki
 	\caption{\textsc{QLearningAgent}}
 	\label{algorithm:qlearning_agent}
 	\footnotesize
-    \Persistent{learning rate $\alpha \in [0, 1]$, discount fbody $\gamma \in [0, 1)$, exploration rate $\epsilon \in [0, 1]$,\newline
+    \Persistent{learning rate $\alpha \in [0, 1]$, discount factor $\gamma \in [0, 1)$, exploration rate $\epsilon \in [0, 1]$,\newline
     feature $f_{j} : S \times A \to \mathbb{R}$ with weight $w_{j} \in \mathbb{R}$ for $j = 1, \dots, m$}
     \Function{$\textsc{ChooseAction}(s)$}{
         \WithProbability{$\epsilon$}{

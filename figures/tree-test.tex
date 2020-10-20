@@ -1,0 +1,209 @@
+\documentclass{standalone}
+
+\usepackage{txfonts}
+
+\usepackage{bm}
+\newcommand{\vect}[1]{\bm{#1}}
+
+\usepackage{forest}
+
+\usepackage[first=1, last=64]{lcg}
+\newcommand{\random}{\rand\arabic{rand}}
+
+\begin{document}
+
+\footnotesize
+\begin{forest}
+    [$s_{1}$, draw, circle, label={above:$18.75$}
+        [$2$, edge label={node[midway,above left]{$a_{1}$}}, label={above:$18.75$}
+            [$\spadesuit$, edge label={node[midway,above left]{$a_{1}'$}}, label={above:$18.75$}
+                [$s_{2}$, draw, circle, label={above:$17.5$}
+                    [$2$, edge label={node[midway,above left]{$a_{3}$}}, label={above left:$17.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{5}'$}}, label={right:$17.5$}
+                            [$s_{10}$, draw, circle, label={below:$17$}]
+                            [$s_{11}$, draw, circle, label={below:$18$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{6}'$}}, label={left:$41.5$}
+                            [$s_{12}$, draw, circle, label={below:$53$}]
+                            [$s_{13}$, draw, circle, label={below:$30$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{4}$}}, edge={dotted}, label={above right:$17$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{7}'$}}, edge={dotted}, label={right:$37.5$}
+                            [$s_{14}$, draw, circle, dotted, edge={dotted}, label={below:$19$}]
+                            [$s_{15}$, draw, circle, dotted, edge={dotted}, label={below:$56$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{8}'$}}, edge={dotted}, label={left:$17$}
+                            [$s_{16}$, draw, circle, dotted, edge={dotted}, label={below:$6$}]
+                            [$s_{17}$, draw, circle, dotted, edge={dotted}, label={below:$28$}]
+                        ]
+                    ]
+                ]
+                [$s_{3}$, draw, circle, label={above:$20$}
+                    [$2$, edge label={node[midway,above left]{$a_{5}$}}, label={above left:$20$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{9}'$}}, label={right:$20$}
+                            [$s_{18}$, draw, circle, label={below:$34$}]
+                            [$s_{19}$, draw, circle, label={below:$6$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{10}'$}}, label={left:$31$}
+                            [$s_{20}$, draw, circle, label={below:$34$}]
+                            [$s_{21}$, draw, circle, label={below:$28$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{6}$}}, edge={dotted}, label={above right:$11.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{11}'$}}, edge={dotted}, label={right:$48$}
+                            [$s_{22}$, draw, circle, dotted, edge={dotted}, label={below:$50$}]
+                            [$s_{23}$, draw, circle, dotted, edge={dotted}, label={below:$46$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{12}'$}}, edge={dotted}, label={left:$11.5$}
+                            [$s_{24}$, draw, circle, dotted, edge={dotted}, label={below:$1$}]
+                            [$s_{25}$, draw, circle, dotted, edge={dotted}, label={below:$22$}]
+                        ]
+                    ]
+                ]
+            ]
+            [$\spadesuit$, edge label={node[midway,above right]{$a_{2}'$}}, label={above:$33.75$}
+                [$s_{4}$, draw, circle, label={above:$46.5$}
+                    [$2$, edge label={node[midway,above left]{$a_{7}$}}, edge={dotted}, label={above left:$19$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{13}'$}}, edge={dotted}, label={right:$19$}
+                            [$s_{26}$, draw, circle, dotted, edge={dotted}, label={below:$16$}]
+                            [$s_{27}$, draw, circle, dotted, edge={dotted}, label={below:$22$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{14}'$}}, edge={dotted}, label={left:$35.5$}
+                            [$s_{28}$, draw, circle, dotted, edge={dotted}, label={below:$12$}]
+                            [$s_{29}$, draw, circle, dotted, edge={dotted}, label={below:$59$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{8}$}}, label={above right:$46.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{15}'$}}, label={right:$46.5$}
+                            [$s_{30}$, draw, circle, label={below:$31$}]
+                            [$s_{31}$, draw, circle, label={below:$62$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{16}'$}}, label={left:$51$}
+                            [$s_{32}$, draw, circle, label={below:$62$}]
+                            [$s_{33}$, draw, circle, label={below:$40$}]
+                        ]
+                    ]
+                ]
+                [$s_{5}$, draw, circle, label={above:$21$}
+                    [$2$, edge label={node[midway,above left]{$a_{9}$}}, label={above left:$21$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{17}'$}}, label={right:$33$}
+                            [$s_{34}$, draw, circle, label={below:$58$}]
+                            [$s_{35}$, draw, circle, label={below:$8$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{18}'$}}, label={left:$21$}
+                            [$s_{36}$, draw, circle, label={below:$19$}]
+                            [$s_{37}$, draw, circle, label={below:$23$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{10}$}}, edge={dotted}, label={above right:$15$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{19}'$}}, edge={dotted}, label={right:$15$}
+                            [$s_{38}$, draw, circle, dotted, edge={dotted}, label={below:$20$}]
+                            [$s_{39}$, draw, circle, dotted, edge={dotted}, label={below:$10$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{20}'$}}, edge={dotted}, label={left:$27.5$}
+                            [$s_{40}$, draw, circle, dotted, edge={dotted}, label={below:$17$}]
+                            [$s_{41}$, draw, circle, dotted, edge={dotted}, label={below:$38$}]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        [$2$, edge label={node[midway,above right]{$a_{2}$}}, edge={dotted}, label={above:$16.5$}
+            [$\spadesuit$, edge label={node[midway,above right]{$a_{3}'$}}, edge={dotted}, label={above:$16.5$}
+                [$s_{6}$, draw, circle, dotted, edge={dotted}, label={above:$17.5$}
+                    [$2$, edge label={node[midway,above left]{$a_{11}$}}, edge={dotted}, label={above left:$17.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{21}'$}}, edge={dotted}, label={right:$48$}
+                            [$s_{42}$, draw, circle, dotted, edge={dotted}, label={below:$37$}]
+                            [$s_{43}$, draw, circle, dotted, edge={dotted}, label={below:$59$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{22}'$}}, edge={dotted}, label={left:$17.5$}
+                            [$s_{44}$, draw, circle, dotted, edge={dotted}, label={below:$29$}]
+                            [$s_{45}$, draw, circle, dotted, edge={dotted}, label={below:$6$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{12}$}}, edge={dotted}, label={above right:$16.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{23}'$}}, edge={dotted}, label={right:$44$}
+                            [$s_{46}$, draw, circle, dotted, edge={dotted}, label={below:$24$}]
+                            [$s_{47}$, draw, circle, dotted, edge={dotted}, label={below:$64$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{24}'$}}, edge={dotted}, label={left:$16.5$}
+                            [$s_{48}$, draw, circle, dotted, edge={dotted}, label={below:$13$}]
+                            [$s_{49}$, draw, circle, dotted, edge={dotted}, label={below:$20$}]
+                        ]
+                    ]
+                ]
+                [$s_{7}$, draw, circle, dotted, edge={dotted}, label={above:$15.5$}
+                    [$2$, edge label={node[midway,above left]{$a_{13}$}}, edge={dotted}, label={above left:$15.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{25}'$}}, edge={dotted}, label={right:$30.5$}
+                            [$s_{50}$, draw, circle, dotted, edge={dotted}, label={below:$7$}]
+                            [$s_{51}$, draw, circle, dotted, edge={dotted}, label={below:$54$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{26}'$}}, edge={dotted}, label={left:$15.5$}
+                            [$s_{52}$, draw, circle, dotted, edge={dotted}, label={below:$8$}]
+                            [$s_{53}$, draw, circle, dotted, edge={dotted}, label={below:$23$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{14}$}}, edge={dotted}, label={above right:$10$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{27}'$}}, edge={dotted}, label={right:$10$}
+                            [$s_{54}$, draw, circle, dotted, edge={dotted}, label={below:$11$}]
+                            [$s_{55}$, draw, circle, dotted, edge={dotted}, label={below:$9$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{28}'$}}, edge={dotted}, label={left:$36$}
+                            [$s_{56}$, draw, circle, dotted, edge={dotted}, label={below:$9$}]
+                            [$s_{57}$, draw, circle, dotted, edge={dotted}, label={below:$63$}]
+                        ]
+                    ]
+                ]
+            ]
+            [$\spadesuit$, edge label={node[midway,above left]{$a_{4}'$}}, edge={dotted}, label={above:$37$}
+                [$s_{8}$, draw, circle, dotted, edge={dotted}, label={above:$37$}
+                    [$2$, edge label={node[midway,above left]{$a_{15}$}}, edge={dotted}, label={above left:$20.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{29}'$}}, edge={dotted}, label={right:$40.5$}
+                            [$s_{58}$, draw, circle, dotted, edge={dotted}, label={below:$47$}]
+                            [$s_{59}$, draw, circle, dotted, edge={dotted}, label={below:$34$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{30}'$}}, edge={dotted}, label={left:$20.5$}
+                            [$s_{60}$, draw, circle, dotted, edge={dotted}, label={below:$4$}]
+                            [$s_{61}$, draw, circle, dotted, edge={dotted}, label={below:$37$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{16}$}}, edge={dotted}, label={above right:$37$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{31}'$}}, edge={dotted}, label={right:$51$}
+                            [$s_{62}$, draw, circle, dotted, edge={dotted}, label={below:$48$}]
+                            [$s_{63}$, draw, circle, dotted, edge={dotted}, label={below:$54$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{32}'$}}, edge={dotted}, label={left:$37$}
+                            [$s_{64}$, draw, circle, dotted, edge={dotted}, label={below:$32$}]
+                            [$s_{65}$, draw, circle, dotted, edge={dotted}, label={below:$42$}]
+                        ]
+                    ]
+                ]
+                [$s_{9}$, draw, circle, dotted, edge={dotted}, label={above:$37$}
+                    [$2$, edge label={node[midway,above left]{$a_{17}$}}, edge={dotted}, label={above left:$30.5$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{33}'$}}, edge={dotted}, label={right:$49$}
+                            [$s_{66}$, draw, circle, dotted, edge={dotted}, label={below:$64$}]
+                            [$s_{67}$, draw, circle, dotted, edge={dotted}, label={below:$34$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{34}'$}}, edge={dotted}, label={left:$30.5$}
+                            [$s_{68}$, draw, circle, dotted, edge={dotted}, label={below:$30$}]
+                            [$s_{69}$, draw, circle, dotted, edge={dotted}, label={below:$31$}]
+                        ]
+                    ]
+                    [$2$, edge label={node[midway,above right]{$a_{18}$}}, edge={dotted}, label={above right:$37$}
+                        [$\spadesuit$, edge label={node[midway,above left]{$a_{35}'$}}, edge={dotted}, label={right:$37$}
+                            [$s_{70}$, draw, circle, dotted, edge={dotted}, label={below:$59$}]
+                            [$s_{71}$, draw, circle, dotted, edge={dotted}, label={below:$15$}]
+                        ]
+                        [$\spadesuit$, edge label={node[midway,above right]{$a_{36}'$}}, edge={dotted}, label={left:$47$}
+                            [$s_{72}$, draw, circle, dotted, edge={dotted}, label={below:$41$}]
+                            [$s_{73}$, draw, circle, dotted, edge={dotted}, label={below:$53$}]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+\end{forest}
+
+\end{document}
