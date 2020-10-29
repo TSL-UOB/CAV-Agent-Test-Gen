@@ -683,13 +683,20 @@ and $e_{i} \in (e_{\min}, e_{\max}]$ is a steering angle (in radians) with $e_{\
 Let $\lambda \in \mathbb{R}^{> 0}$ be a time resolution constant.
 If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, o_{i})$, then the successor state is $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$ where:
 \begin{align}
-    f_{i+1} & = f_{i} + \left( v_{i} \cdot \lambda \cdot \left( \cos{o_{i} + e_{i}}, \sin{o_{i} + e_{i}} \right) \right) \\
+    f_{i+1} & = f_{i} + \left( v_{i} \cdot \lambda \cdot \left( \cos{(o_{i} + e_{i})}, \sin{(o_{i} + e_{i})} \right) \right) \\
+    % f_{i+1}^{x} & = f_{i}^{x} + \left( v_{i} \cdot \lambda \cdot \cos{(o_{i} + e_{i})} \right) \\
+    % f_{i+1}^{y} & = f_{i}^{y} + \left( v_{i} \cdot \lambda \cdot \sin{(o_{i} + e_{i})} \right) \\
     r_{i+1} & = r_{i} + \left( v_{i} \cdot \lambda \cdot \left( \cos{o_{i}}, \sin{o_{i}} \right) \right) \\
     p_{i+1} & = \frac{f_{i+1} + r_{i+1}}{2}  \\
-    v_{i+1} & = \max{ \left\{ v_{\min}, \min{ \left\{ v_{\max}, v_{i} + \left( \lambda \cdot t_{i} \right) \right\} } \right\} } \\
+    v_{i+1} & = \min\{ v_{\max}, \max\{ v_{\min}, v_{i} + \left( \lambda \cdot t_{i} \right) \} \} \\
     o_{i+1} & = \atantwo{ \left( f_{i+1}^{y} - r_{i+1}^{y}, f_{i+1}^{x} - r_{i+1}^{x} \right) } \label{equation:kinematics_last}
 \end{align}
 The body kinematics from Equations~\ref{equation:kinematics_first}--\ref{equation:kinematics_last} are illustrated in Figure~\ref{figure:kinematics}.
+Given states $s_{i}$ and $s_{i+1}$ such that $\lambda \cdot v_{i} > 0$ and $-1 \le \frac{f_{i+1}^{x} - f_{i}^{x}}{\lambda \cdot v_{i}} \le 1$ (resp.\ $-1 \le \frac{f_{i+1}^{y} - f_{i}^{y}}{\lambda \cdot v_{i}} \le 1$), then transitioning from $s_{i}$ to $s_{i+1}$ can be achieved by executing action $a_{i} = (t_{i}, e_{i})$ in $s_{i}$ where:
+\begin{align}
+    t_{i} & = \frac{v_{i+1} - v_{i}}{\lambda} \\
+    e_{i} & = \cos^{-1}{\left( \frac{f_{i+1}^{x} - f_{i}^{x}}{\lambda \cdot v_{i}} \right) - o_{i}} = \sin^{-1}{\left( \frac{f_{i+1}^{y} - f_{i}^{y}}{\lambda \cdot v_{i}} \right) - o_{i}}
+\end{align}
 
 \begin{figure}[htbp]
     \centering
@@ -752,11 +759,11 @@ The body kinematics from Equations~\ref{equation:kinematics_first}--\ref{equatio
     \label{figure:kinematics}
 \end{figure}
 
-\begin{note}[Problem]
-    Given state $s_{i}$ and target orientation $o_{g}$ such that $o_{g}$ is reachable from $s_{i}$ with a single action, find steering angle $e_{i}$ such that executing action $a_{i} = (t_{i}, e_{i})$ in $s_{i}$ results in successor state $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$ where $o_{i+1} = o_{g}$ for any throttle $t_{i}$.
-\end{note}
+% \begin{note}[Problem]
+%     Given state $s_{i}$ and target orientation $o_{g}$ such that $o_{g}$ is reachable from $s_{i}$ with a single action, find steering angle $e_{i}$ such that executing action $a_{i} = (t_{i}, e_{i})$ in $s_{i}$ results in successor state $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$ where $o_{i+1} = o_{g}$ for any throttle $t_{i}$.
+% \end{note}
 
-\newpage
+\clearpage
 \section*{Appendix: Algorithms}
 
 \begin{note}[To do]
