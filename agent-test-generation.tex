@@ -40,7 +40,7 @@
 
 \DeclareMathOperator*{\argmax}{\arg\!\max}
 \DeclareMathOperator*{\argmin}{\arg\!\min}
-\DeclareMathOperator*{\atantwo}{atan2}
+\DeclareMathOperator*{\arctantwo}{arctan2}
 
 \usepackage{mdframed}
 \usepackage{xcolor}
@@ -667,92 +667,137 @@ A test is also applicable (and optimal) for any initial state of a simulation ru
 \newpage
 \section*{Appendix: Kinematics}
 A state is a tuple $s_{i} = (p_{i}, v_{i}, o_{i})$ where
-$p_{i} \in \mathbb{R}^{2}$ is a position denoted $p_{i} = (p_{i}^{x}, p_{i}^{y})$,
-$v_{i} \in [v_{\min}, v_{\max}]$ is a velocity with $v_{\min}, v_{\max} \in \mathbb{R}^{\ge 0}$ such that $v_{\min} < v_{\max}$,
+$p_{i} \in \mathbb{R}^{2}$ is a position (point) denoted $p_{i} = (p_{i}^{x}, p_{i}^{y})$,
+$v_{i} \in [v_{\min}, v_{\max}]$ is a velocity with $v_{\min}, v_{\max} \in \mathbb{R}^{\ge 0}$ such that $v_{\min} \le v_{\max}$,
 and $o_{i} \in (-\pi, \pi]$ is an orientation (in radians).
 Let $b \in \mathbb{R}^{\ge 0}$ be a wheelbase constant.
 The positions of front and rear wheels $f_{i}, r_{i} \in \mathbb{R}^{2}$ in state $s_{i} = (p_{i}, v_{i}, o_{i})$ are:
 \begin{align}
-    f_{i} & = \left( p_{i} + \frac{b}{2} \cdot (\cos{o_{i}}, \sin{o_{i}}) \right) \label{equation:kinematics_first} \\
-    r_{i} & = \left( p_{i} - \frac{b}{2} \cdot \left( \cos{o_{i}}, \sin{o_{i}} \right) \right)
+    f_{i}^{x} & = p_{i}^{x} + \frac{b}{2} \cos{o_{i}} \label{equation:kinematics_first} \\
+    % & = \frac{b \cos{o_{i}}}{2} + p_{i}^{x} \\
+    f_{i}^{y} & = p_{i}^{y} + \frac{b}{2} \sin{o_{i}} \\
+    % & = \frac{b \sin{o_{i}}}{2} + p_{i}^{y} \\
+    r_{i}^{x} & = p_{i}^{x} - \frac{b}{2} \cos{o_{i}} \\
+    % & = \frac{-b \cos{o_{i}}}{2} + p_{i}^{x} \\
+    r_{i}^{y} & = p_{i}^{y} - \frac{b}{2} \sin{o_{i}}
+    % & = \frac{-b \sin{o_{i}}}{2} + p_{i}^{y}
 \end{align}
 A body has two effectors: throttle and steering.
 An action is a tuple $a_{i} = (t_{i}, e_{i})$ where
-$t_{i} \in [t_{\min}, t_{\max}]$ is a throttle with $t_{\min}, t_{\max} \in \mathbb{R}$ such that $t_{\min} < t_{\max}$,
-and $e_{i} \in (e_{\min}, e_{\max}]$ is a steering angle (in radians) with $e_{\min}, e_{\max} \in (-\pi, \pi]$ such that $e_{\min} < e_{\max}$.
+$t_{i} \in [t_{\min}, t_{\max}]$ is a throttle with $t_{\min}, t_{\max} \in \mathbb{R}$ such that $t_{\min} \le t_{\max}$,
+and $e_{i} \in [e_{\min}, e_{\max}]$ is a steering angle (in radians) with $e_{\min}, e_{\max} \in (-\frac{\pi}{2}, \frac{\pi}{2})$ such that $e_{\min} \le e_{\max}$.
 Let $\lambda \in \mathbb{R}^{> 0}$ be a time resolution constant.
-If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, o_{i})$, then the successor state is $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$ where:
+% Rotating point $a$ around pivot point $b$ by angle $\theta$ gives point $R_{b}^{\theta}(a)$ where:
+% \begin{align}
+%     R_{b}^{\theta}(a)^{x} & = b^{x} + (a^{x} - b^{x}) \cos{\theta} - (a^{y} - b^{y}) \sin{\theta} \\
+%     % & = b^{x} + (a^{x} - b^{x}) \cos{\theta} + (-a^{y} + b^{y}) \sin{\theta} \\
+%     R_{b}^{\theta}(a)^{y} & = b^{y} + (a^{x} - b^{x}) \sin{\theta} + (a^{y} - b^{y}) \cos{\theta}
+%     % & = b^{y} + (a^{x} - b^{x}) \sin{\theta} + (a^{y} - b^{y}) \cos{\theta}
+% \end{align}
+If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, o_{i})$ such that $e_{i} = 0$, then the successor state is $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$ where:
 \begin{align}
-    f_{i+1} & = f_{i} + \left( v_{i} \cdot \lambda \cdot \left( \cos{(o_{i} + e_{i})}, \sin{(o_{i} + e_{i})} \right) \right) \\
-    % f_{i+1}^{x} & = f_{i}^{x} + \left( v_{i} \cdot \lambda \cdot \cos{(o_{i} + e_{i})} \right) \\
-    % f_{i+1}^{y} & = f_{i}^{y} + \left( v_{i} \cdot \lambda \cdot \sin{(o_{i} + e_{i})} \right) \\
-    r_{i+1} & = r_{i} + \left( v_{i} \cdot \lambda \cdot \left( \cos{o_{i}}, \sin{o_{i}} \right) \right) \\
-    p_{i+1} & = \frac{f_{i+1} + r_{i+1}}{2}  \\
-    v_{i+1} & = \min\{ v_{\max}, \max\{ v_{\min}, v_{i} + \left( \lambda \cdot t_{i} \right) \} \} \\
-    o_{i+1} & = \atantwo{ \left( f_{i+1}^{y} - r_{i+1}^{y}, f_{i+1}^{x} - r_{i+1}^{x} \right) } \label{equation:kinematics_last}
+    p_{i+1}^{x} & = p_{i}^{x} + v_{i} \lambda \cos{o_{i}} \\
+    p_{i+1}^{y} & = p_{i}^{y} + v_{i} \lambda \sin{o_{i}} \\
+    v_{i+1} & = \min\{ v_{\max}, \max\{ v_{\min}, v_{i} + t_{i} \lambda \} \} \\
+    o_{i+1} & = o_{i}
 \end{align}
-The body kinematics from Equations~\ref{equation:kinematics_first}--\ref{equation:kinematics_last} are illustrated in Figure~\ref{figure:kinematics}.
-Given states $s_{i}$ and $s_{i+1}$ such that $\lambda \cdot v_{i} > 0$ and $-1 \le \frac{f_{i+1}^{x} - f_{i}^{x}}{\lambda \cdot v_{i}} \le 1$ (resp.\ $-1 \le \frac{f_{i+1}^{y} - f_{i}^{y}}{\lambda \cdot v_{i}} \le 1$), then transitioning from $s_{i}$ to $s_{i+1}$ can be achieved by executing action $a_{i} = (t_{i}, e_{i})$ in $s_{i}$ where:
+If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, o_{i})$ such that $e_{i} \ne 0$, then the successor state is $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$ where:
 \begin{align}
-    t_{i} & = \frac{v_{i+1} - v_{i}}{\lambda} \\
-    e_{i} & = \cos^{-1}{\left( \frac{f_{i+1}^{x} - f_{i}^{x}}{\lambda \cdot v_{i}} \right) - o_{i}} = \sin^{-1}{\left( \frac{f_{i+1}^{y} - f_{i}^{y}}{\lambda \cdot v_{i}} \right) - o_{i}}
+    % c_{i}^{x} & = r_{i}^{x} + \frac{b}{\tan{e_{i}}} \cos{\left( o_{i} + \frac{\pi}{2} \right)} \\
+    % & = \frac{-b \sin{o_{i}}}{\tan{e_{i}}} + r_{i}^{x} \\
+    c_{i}^{x} & = r_{i}^{x} - \frac{b}{\tan{e_{i}}} \sin{o_{i}} \\
+    % & = \frac{-b \sin{o_{i}}}{\tan{e_{i}}} - \frac{b \cos{o_{i}}}{2} + p_{i}^{x} = p_{i}^{x} - \frac{b}{2} \cos{o_{i}} - \frac{b}{\tan{e_{i}}} \sin{o_{i}} \\
+    % c_{i}^{y} & = r_{i}^{y} + \frac{b}{\tan{e_{i}}} \sin{\left( o_{i} + \frac{\pi}{2} \right)} \\
+    % & = \frac{b \cos{o_{i}}}{\tan{e_{i}}} + r_{i}^{y} \\
+    c_{i}^{y} & = r_{i}^{y} + \frac{b}{\tan{e_{i}}} \cos{o_{i}} \\
+    % & = \frac{-b \sin{o_{i}}}{2} + \frac{b \cos{o_{i}}}{\tan{e_{i}}} + p_{i}^{y} = p_{i}^{y} - \frac{b}{2} \sin{o_{i}} + \frac{b}{\tan{e_{i}}} \cos{o_{i}} \\
+    \theta_{i} & = \frac{ \text{sgn}(e_{i}) v_{i} \lambda}{\sqrt{(c_{i}^{x} - p_{i}^{x})^{2} + (c_{i}^{y} - p_{i}^{y})^{2}}} \\
+    % & = \frac{\text{sgn}(e_{i}) 2 v_{i} \lambda}{\sqrt{b^{2} \left( 1 + \frac{4}{(\tan{e_{i}})^{2}} \right)}} \\
+    p_{i+1}^{x} & = c_{i}^{x} + (p_{i}^{x} - c_{i}^{x}) \cos{\theta_{i}} - (p_{i}^{y} - c_{i}^{y}) \sin{\theta_{i}} \\
+    % p_{i+1}^{x} & = R_{c_{i}}^{\theta_{i}}(p_{i})^{x} \\
+    % p_{i+1}^{x} & = \frac{-b \sin{o_{i}}}{\tan{e_{i}}} + \frac{b \sin{(\theta_{i} + o_{i})}}{\tan{e_{i}}} - \frac{b \cos{o_{i}}}{2} + \frac{b \cos{(\theta_{i} + o_{i})}}{2} + p_x \\
+    % & = \frac{b \sin{(\theta_{i} + o_{i})}}{\tan{e_{i}}} + \frac{b \cos{(\theta_{i} + o_{i})}}{2} + c_{i}^{x} \\
+    % & = \frac{b}{\tan{e_{i}}} \sin{(\theta_{i} + o_{i})} + \frac{b}{2} \cos{(\theta_{i} + o_{i})} + c_{i}^{x} \\
+    p_{i+1}^{y} & = c_{i}^{y} + (p_{i}^{x} - c_{i}^{x}) \sin{\theta_{i}} + (p_{i}^{y} - c_{i}^{y}) \cos{\theta_{i}} \\
+    % p_{i+1}^{y} & = R_{c_{i}}^{\theta_{i}}(p_{i})^{y} \\
+    % & = \frac{-b \sin{o_{i}}}{2} + \frac{b \sin{(\theta_{i} + o_{i})}}{2} + \frac{b \cos{o_{i}}}{\tan{e_{i}}} - \frac{b \cos{(\theta_{i} + o_{i})}}{\tan{e_{i}}} + p_y \\
+    % & = \frac{b \sin{(\theta_{i} + o_{i})}}{2} - \frac{b \cos{(\theta_{i} + o_{i})}}{\tan{e_{i}}} + c_{i}^{y} \\
+    % & = \frac{b}{2} \sin{(\theta_{i} + o_{i})} - \frac{b}{\tan{e_{i}}} \cos{(\theta_{i} + o_{i})} + c_{i}^{y} \\
+    v_{i+1} & = \min\{ v_{\max}, \max\{ v_{\min}, v_{i} + t_{i} \lambda \} \} \\
+    % o_{i+1} & = \arctantwo{ \left( R_{c_{i}}^{\theta_{i}}(f_{i})^{y} - R_{c_{i}}^{\theta_{i}}(r_{i})^{y}, R_{c_{i}}^{\theta_{i}}(f_{i})^{x} - R_{c_{i}}^{\theta_{i}}(r_{i})^{x} \right) } \\
+    o_{i+1} & = \arctantwo{(\sin{(o_{i} + \theta_{i})}, \cos{(o_{i} + \theta_{i})})} \label{equation:kinematics_last}
 \end{align}
+The point $c_{i}$ is the centre of rotation for the given state-action pair (with non-zero steering action) and $\theta_{i}$ is the corresponding turn angle.
+The body kinematics specified by Equations~\ref{equation:kinematics_first}--\ref{equation:kinematics_last} are illustrated in Figure~\ref{figure:kinematics}.
+% \begin{align}
+%     \theta{(o_{i}, o_{i+1})} & = \arctantwo{(\sin{(o_{i+1} - o_{i})}, \cos{(o_{i+1} - o_{i})})} \\
+%     e(\theta) & = \text{sgn}(\theta) \arctan{\left( 2 b \sqrt{\frac{\theta^{2}}{4 v^{2} \lambda^{2} - b^{2} \theta^{2}}} \right)}
+% \end{align}
 
 \begin{figure}[htbp]
     \centering
     \footnotesize
     \begin{tikzpicture}
         \draw [latex-latex] (-1.0, 0.0) -- (7.5, 0.0); % X axis
-        \draw [latex-latex] (0.0, -1.0) -- (0.0, 5.0); % Y axis
+        \draw [latex-latex] (0.0, -1.0) -- (0.0, 7.5); % Y axis
         \node at (7.4, -0.2) {$x$};
-        \node at (-0.2, 4.9) {$y$};
+        \node at (-0.2, 7.4) {$y$};
         \node [circle, fill, inner sep=1pt, label={below left:$(0, 0)$}] at (0.0, 0.0) {};
-        \draw [dotted] (3.0, 2.0) circle (3.0); % outer circle
-        \draw [-latex, dotted] (3.0, 2.0) -- (6.0, 2.0); % outer circle, 0 degrees
 
-        \begin{scope}[shift={(3.0, 2.0)}, rotate around={20.0:(0.0, 0.0)}]
-            \draw (-2.25, -0.875) rectangle ++(4.5, 1.75);  % bounding box
-            \node [circle, fill, inner sep=1pt, label={below right:$p_{i}$}] at (0.0, 0.0) {};
-            \node [circle, fill, inner sep=1pt, label={below right:$f_{i}$}] at (1.5, 0.0) {};
-            \node [circle, fill, inner sep=1pt, label={below right:$r_{i}$}] at (-1.5, 0.0) {};
-            \draw [dotted] (0.0, 0.0) -- (1.5, 0.0); % outer circle, 20 degrees
-            \draw [latex-latex, dotted] (-1.5, 0.2) -- (1.5, 0.2); % b arrow
-            \node at (0.0, 0.4) {$b$};
-            \draw [latex-latex, dotted] (-2.25, -1.075) -- (2.25, -1.075); % l arrow
-            \node at (0.0, -1.275) {$l$};
-            \draw [latex-latex, dotted] (-2.45, -0.875) -- (-2.45, 0.875); % w arrow
-            \node at (-2.65, 0.0) {$w$};
-            \node at (2.6, -0.5) {$o_{i}$};
-
-            \begin{scope}[shift={(1.5, 0.0)}]  % inner circle
-                \draw [dotted] (0.0, 0.0) ++(120:1.5) arc (120:-120:1.5); % inner circle
-                \draw [-latex, dotted] (0.0, 0.0) -- (1.5, 0.0); % inner circle, 0 degrees
-                \draw [-latex, dotted, rotate around={30.0:(0.0, 0.0)}] (0.0, 0.0) -- (1.5, 0.0); % inner circle, 30 degrees
-                \draw [dotted, rotate around={120:(0.0, 0.0)}] (0.0, 0.0) -- (1.5, 0.0); % inner circle, left line
-                \draw [dotted, rotate around={-120:(0.0, 0.0)}] (0.0, 0.0) -- (1.5, 0.0); % inner circle, right line
-                \node at (1.1, 0.3) {$e_{i}$};
-                \node at (-0.9, 1.6) {$e_{\max}$};
-                \node at (-0.8, -1.5) {$e_{\min}$};
-            \end{scope}
+        \begin{scope}[shift={(3.5, 2)}]
+            \draw [-latex] (0.0, 0.0) ++(0:1.5) arc (0:15:1.5);
+            \draw [-] (0.0, 0.0) -- (1.5, 0.0);
+            \node at (1.3, 0.15) {$o_{i}$};
         \end{scope}
 
-        \begin{scope}[shift={(6.5, 2.0)}]
-            \begin{scope}[shift={(1.0, 0.25)}]
-                \draw [-latex] (0.0, 0.0) -- (2.5, 0.0);
-                \draw (0.0, 0.075) -- (0.0, -0.075);
-                \node [circle, inner sep=1pt, label={above:$0$}] at (0.0, 0.0) {};
-                \node [circle, fill, inner sep=1pt, label={above:$v_{\min}$}] at (0.5, 0.0) {};
-                \node [circle, fill, inner sep=1pt, label={above:$v_{\max}$}] at (2.0, 0.0) {};
-                \node [circle, fill, inner sep=1pt, label={above:$v_{i}$}] at (1.25, 0.0) {};
+        \begin{scope}[shift={(3.5, 2)}, rotate around={15.0:(0.0, 0.0)}]
+            \draw (-2.25, -0.875) rectangle ++(4.5, 1.75);
+            \node [circle, fill, inner sep=1pt] at (0.0, 0.0) {};
+            \node at (-0.3, 0.2) {$p_{i}$};
+            \node [circle, fill, inner sep=1pt] at (1.5, 0.0) {};
+            \node at (1.2, 0.2) {$f_{i}$};
+            \node [circle, fill, inner sep=1pt] at (-1.5, 0.0) {};
+            \node at (-1.8, 0.2) {$r_{i}$};
+            \draw [latex-latex, dotted] (-1.5, -0.6) -- (1.5, -0.6);
+            \node at (0.0, -0.4) {$b$};
+            \draw [latex-latex, dotted] (-2.25, -1.075) -- (2.25, -1.075);
+            \node at (0.0, -1.275) {$l$};
+            \draw [latex-latex, dotted] (-2.45, -0.875) -- (-2.45, 0.875);
+            \node at (-2.65, 0.0) {$w$};
+
+            \draw (-1.5, 0.4375) -- (-1.0625, 0.4375) -- (-1.0625, 0);
+
+            \node [circle, fill, inner sep=1pt, label={above:$c_{i}$}] at (-1.5, 5.2) {};
+            \draw [dotted] (-1.5, 5.2) -- (-1.5, 0.0) -- (1.5, 0.0) -- (-1.5, 5.2);
+
+            \begin{scope}[shift={(-1.5, 5.2)}, rotate around={-90.0:(0.0, 0.0)}]
+                \draw [latex-] (0.0, 0.0) ++(30:1.5) arc (30:0:1.5);
+                \draw [-] (0.0, 0.0) -- (1.5, 0.0);
+                \node at (1.3, 0.2) {$e_{i}$};
             \end{scope}
-            \begin{scope}[shift={(0.0, -0.25)}]
-                \draw [latex-latex] (0.0, 0.0) -- (3.5, 0.0);
-                \draw (1.0, 0.075) -- (1.0, -0.075);
-                \node [circle, inner sep=1pt, label={below:$0$}] at (1.0, 0.0) {};
-                \node [circle, fill, inner sep=1pt, label={below:$t_{\min}$}] at (0.5, 0.0) {};
-                \node [circle, fill, inner sep=1pt, label={below:$t_{\max}$}] at (3.0, 0.0) {};
-                \node [circle, fill, inner sep=1pt, label={below:$t_{i}$}] at (2.0, 0.0) {};
+
+            \node [circle, fill, inner sep=1pt, label={above:$p_{i+1}$}] at (3.35, 2.81) {};
+            \draw [-] (-1.5, 5.2) -- (0.0, 0.0);
+            \draw [-, dotted] (-1.5, 5.2) -- (3.35, 2.81);
+
+            \begin{scope}[shift={(-1.5, 5.2)}, rotate around={-74.0:(0.0, 0.0)}]
+                \draw [latex-] (0.0, 0.0) ++(47.67:5.41) arc (47.67:0:5.41);
+                \node at (4, 2) {$\theta_{i}$};
+                \node at (4.5, 3.5) {$v_{i} \lambda$};
             \end{scope}
+
+            \begin{scope}[shift={(1.5, 0.0)}]
+                \draw [latex-latex, dotted] (0.0, 0.0) ++(67.5:1.5) arc (67.5:-67.5:1.5);
+                \draw [latex-] (0.0, 0.0) ++(30:1.5) arc (30:0:1.5);
+                \draw [-] (0.0, 0.0) -- (1.5, 0.0);
+                \draw [-, dotted, rotate around={30:(0, 0)}] (0, 0) -- (1.5, 0);
+                \draw [dotted, rotate around={67.5:(0.0, 0.0)}] (0.0, 0.0) -- (1.5, 0.0);
+                \draw [dotted, rotate around={-67.5:(0.0, 0.0)}] (0.0, 0.0) -- (1.5, 0.0);
+                \node at (1.1, 0.3) {$e_{i}$};
+                \node at (0.9, 0.975) {$e_{\max}$};
+                \node at (1.1, -0.4) {$e_{\min}$};
+            \end{scope}
+
         \end{scope}
     \end{tikzpicture}
     \caption{Body kinematics}
