@@ -712,7 +712,7 @@ If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, 
     c_{i}^{y} & = r_{i}^{y} + \frac{b}{\tan{e_{i}}} \cos{o_{i}} \\
     % & = \frac{-b \sin{o_{i}}}{2} + \frac{b \cos{o_{i}}}{\tan{e_{i}}} + p_{i}^{y} = p_{i}^{y} - \frac{b}{2} \sin{o_{i}} + \frac{b}{\tan{e_{i}}} \cos{o_{i}} \\
     \theta_{i} & = \frac{ \text{sgn}(e_{i}) v_{i} \lambda}{\sqrt{(c_{i}^{x} - p_{i}^{x})^{2} + (c_{i}^{y} - p_{i}^{y})^{2}}} \\
-    % & = \frac{\text{sgn}(e_{i}) 2 v_{i} \lambda}{\sqrt{b^{2} \left( 1 + \frac{4}{(\tan{e_{i}})^{2}} \right)}} \\
+    & = \frac{\text{sgn}(e_{i}) 2 v_{i} \lambda}{\sqrt{b^{2} \left( 1 + \frac{4}{(\tan{e_{i}})^{2}} \right)}} \\
     p_{i+1}^{x} & = c_{i}^{x} + (p_{i}^{x} - c_{i}^{x}) \cos{\theta_{i}} - (p_{i}^{y} - c_{i}^{y}) \sin{\theta_{i}} \\
     % p_{i+1}^{x} & = R_{c_{i}}^{\theta_{i}}(p_{i})^{x} \\
     % p_{i+1}^{x} & = \frac{-b \sin{o_{i}}}{\tan{e_{i}}} + \frac{b \sin{(\theta_{i} + o_{i})}}{\tan{e_{i}}} - \frac{b \cos{o_{i}}}{2} + \frac{b \cos{(\theta_{i} + o_{i})}}{2} + p_x \\
@@ -729,10 +729,15 @@ If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, 
 \end{align}
 The point $c_{i}$ is the centre of rotation for the given state-action pair (with non-zero steering action) and $\theta_{i}$ is the corresponding turn angle.
 The body kinematics specified by Equations~\ref{equation:kinematics_first}--\ref{equation:kinematics_last} are illustrated in Figure~\ref{figure:kinematics}.
-% \begin{align}
-%     \theta{(o_{i}, o_{i+1})} & = \arctantwo{(\sin{(o_{i+1} - o_{i})}, \cos{(o_{i+1} - o_{i})})} \\
-%     e(\theta) & = \text{sgn}(\theta) \arctan{\left( 2 b \sqrt{\frac{\theta^{2}}{4 v^{2} \lambda^{2} - b^{2} \theta^{2}}} \right)}
-% \end{align}
+If action $a_{i} = (t_{i}, e_{i})$ is executed in state $s_{i} = (p_{i}, v_{i}, o_{i})$ such that $v_{i} > 0$ and results in successor state $s_{i+1} = (p_{i+1}, v_{i+1}, o_{i+1})$, then it follows that:
+\begin{align}
+    t_{i} & = \frac{v_{i+1} - v_{i}}{\lambda} \\
+    \theta_{i} & = \arctantwo{(\sin{(o_{i+1} - o_{i})}, \cos{(o_{i+1} - o_{i})})} \\
+    e_{i} & = \text{sgn}(\theta) \arctan{\left( 2 b \sqrt{\frac{\theta^{2}}{4 v_{i}^{2} \lambda^{2} - b^{2} \theta^{2}}} \right)} \label{equation:error}
+    % & = -\arctan{\left( 2 b \frac{\sin{o_{i}} - \sin{o_{i+1}}}{b \cos{o_{i}} - b \cos{o_{i+1}} + 2 p_{i+1}^{x} - 2 p_{i}^{x}} \right)} \\
+    % & = \arctan{\left( 2 b \frac{\cos{o_{i}} - \cos{o_{i+1}}}{b \sin{o_{i}} - b \sin{o_{i+1}} + 2 p_{i+1}^{y} - 2 p_{i}^{y}} \right)}
+\end{align}
+% The preferred method for calculating $e_{i}$ is Equation~\ref{equation:error} because empirical results have shown it to be less affected by floating point error.
 
 \begin{figure}[htbp]
     \centering
